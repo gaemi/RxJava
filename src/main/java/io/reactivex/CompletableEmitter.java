@@ -1,5 +1,5 @@
 /**
- * Copyright 2016 Netflix, Inc.
+ * Copyright (c) 2016-present, RxJava Contributors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
@@ -13,6 +13,7 @@
 
 package io.reactivex;
 
+import io.reactivex.annotations.*;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Cancellable;
 
@@ -35,21 +36,21 @@ public interface CompletableEmitter {
      * Signal an exception.
      * @param t the exception, not null
      */
-    void onError(Throwable t);
+    void onError(@NonNull Throwable t);
 
     /**
      * Sets a Disposable on this emitter; any previous Disposable
      * or Cancellation will be disposed/cancelled.
      * @param d the disposable, null is allowed
      */
-    void setDisposable(Disposable d);
+    void setDisposable(@Nullable Disposable d);
 
     /**
      * Sets a Cancellable on this emitter; any previous Disposable
      * or Cancellation will be disposed/cancelled.
      * @param c the cancellable resource, null is allowed
      */
-    void setCancellable(Cancellable c);
+    void setCancellable(@Nullable Cancellable c);
 
     /**
      * Returns true if the downstream disposed the sequence.

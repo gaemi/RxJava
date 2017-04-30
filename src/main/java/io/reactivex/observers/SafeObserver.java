@@ -1,5 +1,5 @@
 /**
- * Copyright 2016 Netflix, Inc.
+ * Copyright (c) 2016-present, RxJava Contributors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
@@ -13,6 +13,7 @@
 package io.reactivex.observers;
 
 import io.reactivex.Observer;
+import io.reactivex.annotations.*;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.exceptions.*;
 import io.reactivex.internal.disposables.*;
@@ -36,12 +37,12 @@ public final class SafeObserver<T> implements Observer<T>, Disposable {
      * Constructs a SafeObserver by wrapping the given actual Observer.
      * @param actual the actual Observer to wrap, not null (not validated)
      */
-    public SafeObserver(Observer<? super T> actual) {
+    public SafeObserver(@NonNull Observer<? super T> actual) {
         this.actual = actual;
     }
 
     @Override
-    public void onSubscribe(Disposable s) {
+    public void onSubscribe(@NonNull Disposable s) {
         if (DisposableHelper.validate(this.s, s)) {
             this.s = s;
             try {
@@ -74,7 +75,7 @@ public final class SafeObserver<T> implements Observer<T>, Disposable {
     }
 
     @Override
-    public void onNext(T t) {
+    public void onNext(@NonNull T t) {
         if (done) {
             return;
         }
@@ -134,7 +135,7 @@ public final class SafeObserver<T> implements Observer<T>, Disposable {
     }
 
     @Override
-    public void onError(Throwable t) {
+    public void onError(@NonNull Throwable t) {
         if (done) {
             RxJavaPlugins.onError(t);
             return;

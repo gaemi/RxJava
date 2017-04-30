@@ -1,5 +1,5 @@
 /**
- * Copyright 2016 Netflix, Inc.
+ * Copyright (c) 2016-present, RxJava Contributors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
@@ -13,6 +13,7 @@
 
 package io.reactivex;
 
+import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
 
 /**
@@ -40,7 +41,7 @@ public interface Observer<T> {
      * be called anytime to cancel the connection
      * @since 2.0
      */
-    void onSubscribe(Disposable d);
+    void onSubscribe(@NonNull Disposable d);
 
     /**
      * Provides the Observer with a new item to observe.
@@ -53,7 +54,7 @@ public interface Observer<T> {
      * @param t
      *          the item emitted by the Observable
      */
-    void onNext(T t);
+    void onNext(@NonNull T t);
 
     /**
      * Notifies the Observer that the {@link Observable} has experienced an error condition.
@@ -64,7 +65,7 @@ public interface Observer<T> {
      * @param e
      *          the exception encountered by the Observable
      */
-    void onError(Throwable e);
+    void onError(@NonNull Throwable e);
 
     /**
      * Notifies the Observer that the {@link Observable} has finished sending push-based notifications.

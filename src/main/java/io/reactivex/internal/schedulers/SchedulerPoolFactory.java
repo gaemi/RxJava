@@ -1,5 +1,5 @@
 /**
- * Copyright 2016 Netflix, Inc.
+ * Copyright (c) 2016-present, RxJava Contributors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,23 +65,7 @@ public final class SchedulerPoolFactory {
             ScheduledExecutorService next = Executors.newScheduledThreadPool(1, new RxThreadFactory("RxSchedulerPurge"));
             if (PURGE_THREAD.compareAndSet(curr, next)) {
 
-                next.scheduleAtFixedRate(new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            for (ScheduledThreadPoolExecutor e : new ArrayList<ScheduledThreadPoolExecutor>(POOLS.keySet())) {
-                                if (e.isShutdown()) {
-                                    POOLS.remove(e);
-                                } else {
-                                    e.purge();
-                                }
-                            }
-                        } catch (Throwable e) {
-                            // Exceptions.throwIfFatal(e); nowhere to go
-                            RxJavaPlugins.onError(e);
-                        }
-                    }
-                }, PURGE_PERIOD_SECONDS, PURGE_PERIOD_SECONDS, TimeUnit.SECONDS);
+                next.scheduleAtFixedRate(new ScheduledTask(), PURGE_PERIOD_SECONDS, PURGE_PERIOD_SECONDS, TimeUnit.SECONDS);
 
                 return;
             } else {
@@ -130,5 +114,23 @@ public final class SchedulerPoolFactory {
             POOLS.put(e, exec);
         }
         return exec;
+    }
+
+    static final class ScheduledTask implements Runnable {
+        @Override
+        public void run() {
+            try {
+                for (ScheduledThreadPoolExecutor e : new ArrayList<ScheduledThreadPoolExecutor>(POOLS.keySet())) {
+                    if (e.isShutdown()) {
+                        POOLS.remove(e);
+                    } else {
+                        e.purge();
+                    }
+                }
+            } catch (Throwable e) {
+                // Exceptions.throwIfFatal(e); nowhere to go
+                RxJavaPlugins.onError(e);
+            }
+        }
     }
 }

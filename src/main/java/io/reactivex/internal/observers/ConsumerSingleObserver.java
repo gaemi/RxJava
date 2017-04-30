@@ -1,5 +1,5 @@
 /**
- * Copyright 2016 Netflix, Inc.
+ * Copyright (c) 2016-present, RxJava Contributors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
@@ -40,6 +40,7 @@ implements SingleObserver<T>, Disposable {
 
     @Override
     public void onError(Throwable e) {
+        lazySet(DisposableHelper.DISPOSED);
         try {
             onError.accept(e);
         } catch (Throwable ex) {
@@ -55,6 +56,7 @@ implements SingleObserver<T>, Disposable {
 
     @Override
     public void onSuccess(T value) {
+        lazySet(DisposableHelper.DISPOSED);
         try {
             onSuccess.accept(value);
         } catch (Throwable ex) {

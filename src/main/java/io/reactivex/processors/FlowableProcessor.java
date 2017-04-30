@@ -1,5 +1,5 @@
 /**
- * Copyright 2016 Netflix, Inc.
+ * Copyright (c) 2016-present, RxJava Contributors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
@@ -13,9 +13,9 @@
 
 package io.reactivex.processors;
 
+import io.reactivex.*;
+import io.reactivex.annotations.NonNull;
 import org.reactivestreams.Processor;
-
-import io.reactivex.Flowable;
 
 /**
  * Represents a Subscriber and a Flowable (Publisher) at the same time, allowing
@@ -25,7 +25,7 @@ import io.reactivex.Flowable;
  *
  * @param <T> the item value type
  */
-public abstract class FlowableProcessor<T> extends Flowable<T> implements Processor<T, T> {
+public abstract class FlowableProcessor<T> extends Flowable<T> implements Processor<T, T>, FlowableSubscriber<T> {
 
     /**
      * Returns true if the subject has subscribers.
@@ -66,6 +66,7 @@ public abstract class FlowableProcessor<T> extends Flowable<T> implements Proces
      * <p>The method is thread-safe.
      * @return the wrapped and serialized subject
      */
+    @NonNull
     public final FlowableProcessor<T> toSerialized() {
         if (this instanceof SerializedProcessor) {
             return this;

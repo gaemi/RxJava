@@ -1,5 +1,5 @@
 /**
- * Copyright 2016 Netflix, Inc.
+ * Copyright (c) 2016-present, RxJava Contributors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
@@ -18,7 +18,7 @@ import java.util.concurrent.atomic.*;
 
 import org.reactivestreams.*;
 
-import io.reactivex.Flowable;
+import io.reactivex.*;
 import io.reactivex.exceptions.Exceptions;
 import io.reactivex.functions.Function;
 import io.reactivex.internal.functions.ObjectHelper;
@@ -98,8 +98,6 @@ public final class FlowableZip<T, R> extends Flowable<R> {
 
         final boolean delayErrors;
 
-        volatile boolean done;
-
         volatile boolean cancelled;
 
         final Object[] current;
@@ -112,7 +110,7 @@ public final class FlowableZip<T, R> extends Flowable<R> {
             @SuppressWarnings("unchecked")
             ZipSubscriber<T, R>[] a = new ZipSubscriber[n];
             for (int i = 0; i < n; i++) {
-                a[i] = new ZipSubscriber<T, R>(this, prefetch, i);
+                a[i] = new ZipSubscriber<T, R>(this, prefetch);
             }
             this.current = new Object[n];
             this.subscribers = a;
@@ -123,7 +121,7 @@ public final class FlowableZip<T, R> extends Flowable<R> {
         void subscribe(Publisher<? extends T>[] sources, int n) {
             ZipSubscriber<T, R>[] a = subscribers;
             for (int i = 0; i < n; i++) {
-                if (done || cancelled || (!delayErrors && errors.get() != null)) {
+                if (cancelled || (!delayErrors && errors.get() != null)) {
                     return;
                 }
                 sources[i].subscribe(a[i]);
@@ -323,7 +321,7 @@ public final class FlowableZip<T, R> extends Flowable<R> {
     }
 
 
-    static final class ZipSubscriber<T, R> extends AtomicReference<Subscription> implements Subscriber<T>, Subscription {
+    static final class ZipSubscriber<T, R> extends AtomicReference<Subscription> implements FlowableSubscriber<T>, Subscription {
 
         private static final long serialVersionUID = -4627193790118206028L;
 
@@ -333,8 +331,6 @@ public final class FlowableZip<T, R> extends Flowable<R> {
 
         final int limit;
 
-        final int index;
-
         SimpleQueue<T> queue;
 
         long produced;
@@ -343,10 +339,9 @@ public final class FlowableZip<T, R> extends Flowable<R> {
 
         int sourceMode;
 
-        ZipSubscriber(ZipCoordinator<T, R> parent, int prefetch, int index) {
+        ZipSubscriber(ZipCoordinator<T, R> parent, int prefetch) {
             this.parent = parent;
             this.prefetch = prefetch;
-            this.index = index;
             this.limit = prefetch - (prefetch >> 2);
         }
 
@@ -357,7 +352,7 @@ public final class FlowableZip<T, R> extends Flowable<R> {
                 if (s instanceof QueueSubscription) {
                     QueueSubscription<T> f = (QueueSubscription<T>) s;
 
-                    int m = f.requestFusion(QueueSubscription.ANY);
+                    int m = f.requestFusion(QueueSubscription.ANY | QueueSubscription.BOUNDARY);
 
                     if (m == QueueSubscription.SYNC) {
                         sourceMode = m;

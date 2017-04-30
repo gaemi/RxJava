@@ -1,5 +1,5 @@
 /**
- * Copyright 2016 Netflix, Inc.
+ * Copyright (c) 2016-present, RxJava Contributors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
@@ -19,8 +19,11 @@ import java.util.concurrent.atomic.*;
 
 import org.reactivestreams.*;
 
+import io.reactivex.*;
+import io.reactivex.annotations.Nullable;
 import io.reactivex.exceptions.*;
 import io.reactivex.functions.Function;
+import io.reactivex.internal.functions.ObjectHelper;
 import io.reactivex.internal.fuseable.*;
 import io.reactivex.internal.queue.SpscArrayQueue;
 import io.reactivex.internal.subscriptions.*;
@@ -33,7 +36,7 @@ public final class FlowableFlattenIterable<T, R> extends AbstractFlowableWithUps
 
     final int prefetch;
 
-    public FlowableFlattenIterable(Publisher<T> source,
+    public FlowableFlattenIterable(Flowable<T> source,
             Function<? super T, ? extends Iterable<? extends R>> mapper, int prefetch) {
         super(source);
         this.mapper = mapper;
@@ -80,7 +83,7 @@ public final class FlowableFlattenIterable<T, R> extends AbstractFlowableWithUps
 
     static final class FlattenIterableSubscriber<T, R>
     extends BasicIntQueueSubscription<R>
-    implements Subscriber<T> {
+    implements FlowableSubscriber<T> {
 
 
         private static final long serialVersionUID = -3096000382929934955L;
@@ -268,7 +271,6 @@ public final class FlowableFlattenIterable<T, R> extends AbstractFlowableWithUps
                         } catch (Throwable ex) {
                             Exceptions.throwIfFatal(ex);
                             s.cancel();
-                            it = null;
                             ExceptionHelper.addThrowable(error, ex);
                             ex = ExceptionHelper.terminate(error);
                             a.onError(ex);
@@ -297,7 +299,7 @@ public final class FlowableFlattenIterable<T, R> extends AbstractFlowableWithUps
                         R v;
 
                         try {
-                            v = it.next();
+                            v = ObjectHelper.requireNonNull(it.next(), "The iterator returned a null value");
                         } catch (Throwable ex) {
                             Exceptions.throwIfFatal(ex);
                             current = null;
@@ -410,9 +412,13 @@ public final class FlowableFlattenIterable<T, R> extends AbstractFlowableWithUps
         @Override
         public boolean isEmpty() {
             Iterator<? extends R> it = current;
-            return (it != null && !it.hasNext()) || queue.isEmpty();
+            if (it == null) {
+                return queue.isEmpty();
+            }
+            return !it.hasNext();
         }
 
+        @Nullable
         @Override
         public R poll() throws Exception {
             Iterator<? extends R> it = current;
@@ -432,7 +438,7 @@ public final class FlowableFlattenIterable<T, R> extends AbstractFlowableWithUps
                     current = it;
                 }
 
-                R r = it.next();
+                R r = ObjectHelper.requireNonNull(it.next(), "The iterator returned a null value");
 
                 if (!it.hasNext()) {
                     current = null;

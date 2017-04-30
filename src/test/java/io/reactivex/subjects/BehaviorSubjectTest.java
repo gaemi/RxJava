@@ -1,5 +1,5 @@
 /**
- * Copyright 2016 Netflix, Inc.
+ * Copyright (c) 2016-present, RxJava Contributors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
@@ -663,7 +663,7 @@ public class BehaviorSubjectTest {
         try {
             p.onError(new TestException());
 
-            TestHelper.assertError(errors, 0, TestException.class);
+            TestHelper.assertUndeliverable(errors, 0, TestException.class);
         } finally {
             RxJavaPlugins.reset();
         }
@@ -768,5 +768,62 @@ public class BehaviorSubjectTest {
 
             }
         });
+    }
+
+
+    @Test
+    public void completeSubscribeRace() throws Exception {
+        for (int i = 0; i < 1000; i++) {
+            final BehaviorSubject<Object> p = BehaviorSubject.create();
+
+            final TestObserver<Object> ts = new TestObserver<Object>();
+
+            Runnable r1 = new Runnable() {
+                @Override
+                public void run() {
+                    p.subscribe(ts);
+                }
+            };
+
+            Runnable r2 = new Runnable() {
+                @Override
+                public void run() {
+                    p.onComplete();
+                }
+            };
+
+            TestHelper.race(r1, r2);
+
+            ts.assertResult();
+        }
+    }
+
+    @Test
+    public void errorSubscribeRace() throws Exception {
+        for (int i = 0; i < 1000; i++) {
+            final BehaviorSubject<Object> p = BehaviorSubject.create();
+
+            final TestObserver<Object> ts = new TestObserver<Object>();
+
+            final TestException ex = new TestException();
+
+            Runnable r1 = new Runnable() {
+                @Override
+                public void run() {
+                    p.subscribe(ts);
+                }
+            };
+
+            Runnable r2 = new Runnable() {
+                @Override
+                public void run() {
+                    p.onError(ex);
+                }
+            };
+
+            TestHelper.race(r1, r2);
+
+            ts.assertFailure(TestException.class);
+        }
     }
 }

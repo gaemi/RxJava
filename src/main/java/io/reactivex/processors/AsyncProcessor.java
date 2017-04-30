@@ -1,5 +1,5 @@
 /**
- * Copyright 2016 Netflix, Inc.
+ * Copyright (c) 2016-present, RxJava Contributors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
@@ -15,10 +15,10 @@ package io.reactivex.processors;
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.reactivestreams.*;
-
+import io.reactivex.annotations.*;
 import io.reactivex.internal.subscriptions.DeferredScalarSubscription;
 import io.reactivex.plugins.RxJavaPlugins;
+import org.reactivestreams.*;
 
 /**
  * A Subject that emits the very last value followed by a completion event or the received error to Subscribers.
@@ -49,6 +49,8 @@ public final class AsyncProcessor<T> extends FlowableProcessor<T> {
      * @param <T> the value type to be received and emitted
      * @return the new AsyncProcessor instance
      */
+    @CheckReturnValue
+    @NonNull
     public static <T> AsyncProcessor<T> create() {
         return new AsyncProcessor<T>();
     }

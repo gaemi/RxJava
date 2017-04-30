@@ -1,5 +1,5 @@
 /**
- * Copyright 2016 Netflix, Inc.
+ * Copyright (c) 2016-present, RxJava Contributors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -141,7 +141,7 @@ public class ExceptionsTest {
             }
         });
         a.onNext(1);
-        assertTrue(depth.get() > MAX_STACK_DEPTH);
+        assertTrue(depth.get() >= MAX_STACK_DEPTH);
     }
 
     @Test(expected = StackOverflowError.class)
@@ -388,7 +388,7 @@ public class ExceptionsTest {
                                   public void subscribe(SingleObserver<? super Integer> s2) {
                                       throw new IllegalArgumentException("original exception");
                                   }
-                              }).toFlowable().subscribe(new Subscriber<Integer>() {
+                              }).toFlowable().subscribe(new FlowableSubscriber<Integer>() {
 
                                   @Override
                                   public void onSubscribe(Subscription s) {
@@ -491,4 +491,26 @@ public class ExceptionsTest {
         }
     }
 
+    @Test
+    public void errorNotImplementedNull1() {
+        OnErrorNotImplementedException ex = new OnErrorNotImplementedException(null);
+
+        assertTrue("" + ex.getCause(), ex.getCause() instanceof NullPointerException);
+    }
+
+    @Test
+    public void errorNotImplementedNull2() {
+        OnErrorNotImplementedException ex = new OnErrorNotImplementedException("Message", null);
+
+        assertTrue("" + ex.getCause(), ex.getCause() instanceof NullPointerException);
+    }
+
+    @Test
+    public void errorNotImplementedWithCause() {
+        OnErrorNotImplementedException ex = new OnErrorNotImplementedException("Message", new TestException("Forced failure"));
+
+        assertTrue("" + ex.getCause(), ex.getCause() instanceof TestException);
+
+        assertEquals("" + ex.getCause(), "Forced failure", ex.getCause().getMessage());
+    }
 }

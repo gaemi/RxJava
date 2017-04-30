@@ -1,5 +1,5 @@
 /**
- * Copyright 2016 Netflix, Inc.
+ * Copyright (c) 2016-present, RxJava Contributors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
@@ -13,6 +13,7 @@
 
 package io.reactivex.processors;
 
+import io.reactivex.annotations.CheckReturnValue;
 import java.lang.reflect.Array;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -29,7 +30,7 @@ import io.reactivex.plugins.RxJavaPlugins;
 /**
  * Replays events to Subscribers.
  * <p>
- * <img width="640" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/S.ReplaySubject.png" alt="">
+ * <img width="640" height="405" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/S.ReplaySubject.png" alt="">
  *
  * <p>
  * The ReplayProcessor can be created in bounded and unbounded mode. It can be bounded by
@@ -89,6 +90,7 @@ public final class ReplayProcessor<T> extends FlowableProcessor<T> {
      *          the type of items observed and emitted by the ReplayProcessor
      * @return the created ReplayProcessor
      */
+    @CheckReturnValue
     public static <T> ReplayProcessor<T> create() {
         return new ReplayProcessor<T>(new UnboundedReplayBuffer<T>(16));
     }
@@ -108,6 +110,7 @@ public final class ReplayProcessor<T> extends FlowableProcessor<T> {
      *          the initial buffer capacity
      * @return the created subject
      */
+    @CheckReturnValue
     public static <T> ReplayProcessor<T> create(int capacityHint) {
         return new ReplayProcessor<T>(new UnboundedReplayBuffer<T>(capacityHint));
     }
@@ -132,6 +135,7 @@ public final class ReplayProcessor<T> extends FlowableProcessor<T> {
      *          the maximum number of buffered items
      * @return the created subject
      */
+    @CheckReturnValue
     public static <T> ReplayProcessor<T> createWithSize(int maxSize) {
         return new ReplayProcessor<T>(new SizeBoundReplayBuffer<T>(maxSize));
     }
@@ -185,6 +189,7 @@ public final class ReplayProcessor<T> extends FlowableProcessor<T> {
      *          the {@link Scheduler} that provides the current time
      * @return the created subject
      */
+    @CheckReturnValue
     public static <T> ReplayProcessor<T> createWithTime(long maxAge, TimeUnit unit, Scheduler scheduler) {
         return new ReplayProcessor<T>(new SizeAndTimeBoundReplayBuffer<T>(Integer.MAX_VALUE, maxAge, unit, scheduler));
     }
@@ -223,6 +228,7 @@ public final class ReplayProcessor<T> extends FlowableProcessor<T> {
      *          the {@link Scheduler} that provides the current time
      * @return the created subject
      */
+    @CheckReturnValue
     public static <T> ReplayProcessor<T> createWithTimeAndSize(long maxAge, TimeUnit unit, Scheduler scheduler, int maxSize) {
         return new ReplayProcessor<T>(new SizeAndTimeBoundReplayBuffer<T>(maxSize, maxAge, unit, scheduler));
     }
@@ -894,7 +900,7 @@ public final class ReplayProcessor<T> extends FlowableProcessor<T> {
 
                 if (e != 0L) {
                     if (rs.requested.get() != Long.MAX_VALUE) {
-                        r = rs.requested.addAndGet(e);
+                        rs.requested.addAndGet(e);
                     }
                 }
 
@@ -1060,8 +1066,8 @@ public final class ReplayProcessor<T> extends FlowableProcessor<T> {
         @Override
         @SuppressWarnings("unchecked")
         public T[] getValues(T[] array) {
-            TimedNode<Object> h = head;
-            int s = size();
+            TimedNode<Object> h = getHead();
+            int s = size(h);
 
             if (s == 0) {
                 if (array.length != 0) {
@@ -1087,6 +1093,22 @@ public final class ReplayProcessor<T> extends FlowableProcessor<T> {
             return array;
         }
 
+        TimedNode<Object> getHead() {
+            TimedNode<Object> index = head;
+            // skip old entries
+            long limit = scheduler.now(unit) - maxAge;
+            TimedNode<Object> next = index.get();
+            while (next != null) {
+                long ts = next.time;
+                if (ts > limit) {
+                    break;
+                }
+                index = next;
+                next = index.get();
+            }
+            return index;
+        }
+
         @Override
         @SuppressWarnings("unchecked")
         public void replay(ReplaySubscription<T> rs) {
@@ -1099,20 +1121,7 @@ public final class ReplayProcessor<T> extends FlowableProcessor<T> {
 
             TimedNode<Object> index = (TimedNode<Object>)rs.index;
             if (index == null) {
-                index = head;
-                if (!done) {
-                    // skip old entries
-                    long limit = scheduler.now(unit) - maxAge;
-                    TimedNode<Object> next = index.get();
-                    while (next != null) {
-                        long ts = next.time;
-                        if (ts > limit) {
-                            break;
-                        }
-                        index = next;
-                        next = index.get();
-                    }
-                }
+                index = getHead();
             }
 
             for (;;) {
@@ -1164,7 +1173,7 @@ public final class ReplayProcessor<T> extends FlowableProcessor<T> {
 
                 if (e != 0L) {
                     if (rs.requested.get() != Long.MAX_VALUE) {
-                        r = rs.requested.addAndGet(e);
+                        rs.requested.addAndGet(e);
                     }
                 }
 
@@ -1179,8 +1188,11 @@ public final class ReplayProcessor<T> extends FlowableProcessor<T> {
 
         @Override
         public int size() {
+            return size(getHead());
+        }
+
+        int size(TimedNode<Object> h) {
             int s = 0;
-            TimedNode<Object> h = head;
             while (s != Integer.MAX_VALUE) {
                 TimedNode<Object> next = h.get();
                 if (next == null) {

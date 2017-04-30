@@ -1,5 +1,5 @@
 /**
- * Copyright 2016 Netflix, Inc.
+ * Copyright (c) 2016-present, RxJava Contributors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
@@ -42,18 +42,7 @@ public enum ObserverFusion {
      */
     public static <T> Function<Observable<T>, TestObserver<T>> test(
             final int mode, final boolean cancelled) {
-        return new Function<Observable<T>, TestObserver<T>>() {
-            @Override
-            public TestObserver<T> apply(Observable<T> t) throws Exception {
-                TestObserver<T> ts = new TestObserver<T>();
-                ts.setInitialFusionMode(mode);
-                if (cancelled) {
-                    ts.cancel();
-                }
-                t.subscribe(ts);
-                return ts;
-            }
-        };
+        return new TestFunctionCallback<T>(mode, cancelled);
     }
 
     /**
@@ -72,6 +61,40 @@ public enum ObserverFusion {
     @SuppressWarnings({ "unchecked", "rawtypes" })
     public static <T> Consumer<TestObserver<T>> assertFuseable() {
         return (Consumer)AssertFuseable.INSTANCE;
+    }
+
+    static final class AssertFusionConsumer<T> implements Consumer<TestObserver<T>> {
+        private final int mode;
+
+        AssertFusionConsumer(int mode) {
+            this.mode = mode;
+        }
+
+        @Override
+        public void accept(TestObserver<T> ts) throws Exception {
+            ts.assertFusionMode(mode);
+        }
+    }
+
+    static final class TestFunctionCallback<T> implements Function<Observable<T>, TestObserver<T>> {
+        private final int mode;
+        private final boolean cancelled;
+
+        TestFunctionCallback(int mode, boolean cancelled) {
+            this.mode = mode;
+            this.cancelled = cancelled;
+        }
+
+        @Override
+        public TestObserver<T> apply(Observable<T> t) throws Exception {
+            TestObserver<T> ts = new TestObserver<T>();
+            ts.setInitialFusionMode(mode);
+            if (cancelled) {
+                ts.cancel();
+            }
+            t.subscribe(ts);
+            return ts;
+        }
     }
 
     enum AssertFuseable implements Consumer<TestObserver<Object>> {
@@ -124,12 +147,7 @@ public enum ObserverFusion {
      * @return the new Consumer instance
      */
     public static <T> Consumer<TestObserver<T>> assertFusionMode(final int mode) {
-        return new Consumer<TestObserver<T>>() {
-            @Override
-            public void accept(TestObserver<T> ts) throws Exception {
-                ts.assertFusionMode(mode);
-            }
-        };
+        return new AssertFusionConsumer<T>(mode);
     }
 
 

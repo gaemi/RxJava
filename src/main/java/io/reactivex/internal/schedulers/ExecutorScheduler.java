@@ -1,5 +1,5 @@
 /**
- * Copyright 2016 Netflix, Inc.
+ * Copyright (c) 2016-present, RxJava Contributors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
@@ -17,6 +17,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 
 import io.reactivex.Scheduler;
+import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.*;
 import io.reactivex.internal.disposables.*;
 import io.reactivex.internal.queue.MpscLinkedQueue;
@@ -29,26 +30,31 @@ import io.reactivex.schedulers.Schedulers;
  */
 public final class ExecutorScheduler extends Scheduler {
 
+    @NonNull
     final Executor executor;
 
     static final Scheduler HELPER = Schedulers.single();
 
-    public ExecutorScheduler(Executor executor) {
+    public ExecutorScheduler(@NonNull Executor executor) {
         this.executor = executor;
     }
 
+    @NonNull
     @Override
     public Worker createWorker() {
         return new ExecutorWorker(executor);
     }
 
+    @NonNull
     @Override
-    public Disposable scheduleDirect(Runnable run) {
+    public Disposable scheduleDirect(@NonNull Runnable run) {
         Runnable decoratedRun = RxJavaPlugins.onSchedule(run);
         try {
             if (executor instanceof ExecutorService) {
-                Future<?> f = ((ExecutorService)executor).submit(decoratedRun);
-                return Disposables.fromFuture(f);
+                ScheduledDirectTask task = new ScheduledDirectTask(decoratedRun);
+                Future<?> f = ((ExecutorService)executor).submit(task);
+                task.setFuture(f);
+                return task;
             }
 
             BooleanRunnable br = new BooleanRunnable(decoratedRun);
@@ -60,41 +66,41 @@ public final class ExecutorScheduler extends Scheduler {
         }
     }
 
+    @NonNull
     @Override
-    public Disposable scheduleDirect(Runnable run, long delay, TimeUnit unit) {
+    public Disposable scheduleDirect(@NonNull Runnable run, final long delay, final TimeUnit unit) {
         final Runnable decoratedRun = RxJavaPlugins.onSchedule(run);
         if (executor instanceof ScheduledExecutorService) {
             try {
-                Future<?> f = ((ScheduledExecutorService)executor).schedule(decoratedRun, delay, unit);
-                return Disposables.fromFuture(f);
+                ScheduledDirectTask task = new ScheduledDirectTask(decoratedRun);
+                Future<?> f = ((ScheduledExecutorService)executor).schedule(task, delay, unit);
+                task.setFuture(f);
+                return task;
             } catch (RejectedExecutionException ex) {
                 RxJavaPlugins.onError(ex);
                 return EmptyDisposable.INSTANCE;
             }
         }
-        SequentialDisposable first = new SequentialDisposable();
 
-        final SequentialDisposable mar = new SequentialDisposable(first);
+        final DelayedRunnable dr = new DelayedRunnable(decoratedRun);
 
-        Disposable delayed = HELPER.scheduleDirect(new Runnable() {
-            @Override
-            public void run() {
-                mar.replace(scheduleDirect(decoratedRun));
-            }
-        }, delay, unit);
+        Disposable delayed = HELPER.scheduleDirect(new DelayedDispose(dr), delay, unit);
 
-        first.replace(delayed);
+        dr.timed.replace(delayed);
 
-        return mar;
+        return dr;
     }
 
+    @NonNull
     @Override
-    public Disposable schedulePeriodicallyDirect(Runnable run, long initialDelay, long period, TimeUnit unit) {
+    public Disposable schedulePeriodicallyDirect(@NonNull Runnable run, long initialDelay, long period, TimeUnit unit) {
         if (executor instanceof ScheduledExecutorService) {
             Runnable decoratedRun = RxJavaPlugins.onSchedule(run);
             try {
-                Future<?> f = ((ScheduledExecutorService)executor).scheduleAtFixedRate(decoratedRun, initialDelay, period, unit);
-                return Disposables.fromFuture(f);
+                ScheduledDirectPeriodicTask task = new ScheduledDirectPeriodicTask(decoratedRun);
+                Future<?> f = ((ScheduledExecutorService)executor).scheduleAtFixedRate(task, initialDelay, period, unit);
+                task.setFuture(f);
+                return task;
             } catch (RejectedExecutionException ex) {
                 RxJavaPlugins.onError(ex);
                 return EmptyDisposable.INSTANCE;
@@ -119,8 +125,9 @@ public final class ExecutorScheduler extends Scheduler {
             this.queue = new MpscLinkedQueue<Runnable>();
         }
 
+        @NonNull
         @Override
-        public Disposable schedule(Runnable run) {
+        public Disposable schedule(@NonNull Runnable run) {
             if (disposed) {
                 return EmptyDisposable.INSTANCE;
             }
@@ -144,8 +151,9 @@ public final class ExecutorScheduler extends Scheduler {
             return br;
         }
 
+        @NonNull
         @Override
-        public Disposable schedule(Runnable run, long delay, TimeUnit unit) {
+        public Disposable schedule(@NonNull Runnable run, long delay, @NonNull TimeUnit unit) {
             if (delay <= 0) {
                 return schedule(run);
             }
@@ -160,12 +168,7 @@ public final class ExecutorScheduler extends Scheduler {
 
             final Runnable decoratedRun = RxJavaPlugins.onSchedule(run);
 
-            ScheduledRunnable sr = new ScheduledRunnable(new Runnable() {
-                @Override
-                public void run() {
-                    mar.replace(schedule(decoratedRun));
-                }
-            }, tasks);
+            ScheduledRunnable sr = new ScheduledRunnable(new SequentialDispose(mar, decoratedRun), tasks);
             tasks.add(sr);
 
             if (executor instanceof ScheduledExecutorService) {
@@ -253,7 +256,11 @@ public final class ExecutorScheduler extends Scheduler {
                 if (get()) {
                     return;
                 }
-                actual.run();
+                try {
+                    actual.run();
+                } finally {
+                    lazySet(true);
+                }
             }
 
             @Override
@@ -266,6 +273,75 @@ public final class ExecutorScheduler extends Scheduler {
                 return get();
             }
         }
+
+        final class SequentialDispose implements Runnable {
+            private final SequentialDisposable mar;
+            private final Runnable decoratedRun;
+
+            SequentialDispose(SequentialDisposable mar, Runnable decoratedRun) {
+                this.mar = mar;
+                this.decoratedRun = decoratedRun;
+            }
+
+            @Override
+            public void run() {
+                mar.replace(schedule(decoratedRun));
+            }
+        }
     }
 
+    static final class DelayedRunnable extends AtomicReference<Runnable> implements Runnable, Disposable {
+
+        private static final long serialVersionUID = -4101336210206799084L;
+
+        final SequentialDisposable timed;
+
+        final SequentialDisposable direct;
+
+        DelayedRunnable(Runnable run) {
+            super(run);
+            this.timed = new SequentialDisposable();
+            this.direct = new SequentialDisposable();
+        }
+
+        @Override
+        public void run() {
+            Runnable r = get();
+            if (r != null) {
+                try {
+                    r.run();
+                } finally {
+                    lazySet(null);
+                    timed.lazySet(DisposableHelper.DISPOSED);
+                    direct.lazySet(DisposableHelper.DISPOSED);
+                }
+            }
+        }
+
+        @Override
+        public boolean isDisposed() {
+            return get() == null;
+        }
+
+        @Override
+        public void dispose() {
+            if (getAndSet(null) != null) {
+                timed.dispose();
+                direct.dispose();
+            }
+        }
+    }
+
+    final class DelayedDispose implements Runnable {
+        private final DelayedRunnable dr;
+
+        DelayedDispose(DelayedRunnable dr) {
+            this.dr = dr;
+        }
+
+        @Override
+        public void run() {
+            dr.direct.replace(scheduleDirect(dr));
+        }
+    }
 }

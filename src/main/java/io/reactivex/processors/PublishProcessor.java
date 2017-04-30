@@ -1,5 +1,5 @@
 /**
- * Copyright 2016 Netflix, Inc.
+ * Copyright (c) 2016-present, RxJava Contributors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
@@ -16,6 +16,7 @@ import java.util.concurrent.atomic.*;
 
 import org.reactivestreams.*;
 
+import io.reactivex.annotations.*;
 import io.reactivex.exceptions.MissingBackpressureException;
 import io.reactivex.internal.subscriptions.SubscriptionHelper;
 import io.reactivex.internal.util.BackpressureHelper;
@@ -25,7 +26,7 @@ import io.reactivex.plugins.RxJavaPlugins;
  * A Subject that multicasts events to Subscribers that are currently subscribed to it.
  *
  * <p>
- * <img width="640" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/S.PublishSubject.png" alt="">
+ * <img width="640" height="405" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/S.PublishSubject.png" alt="">
  *
  * <p>The subject does not coordinate backpressure for its subscribers and implements a weaker onSubscribe which
  * calls requests Long.MAX_VALUE from the incoming Subscriptions. This makes it possible to subscribe the PublishSubject
@@ -74,6 +75,7 @@ public final class PublishProcessor<T> extends FlowableProcessor<T> {
      * @param <T> the value type
      * @return the new PublishProcessor
      */
+    @CheckReturnValue
     public static <T> PublishProcessor<T> create() {
         return new PublishProcessor<T>();
     }
@@ -225,6 +227,39 @@ public final class PublishProcessor<T> extends FlowableProcessor<T> {
         }
     }
 
+    /**
+     * Tries to emit the item to all currently subscribed Subscribers if all of them
+     * has requested some value, returns false otherwise.
+     * <p>
+     * This method should be called in a sequential manner just like the onXXX methods
+     * of the PublishProcessor.
+     * <p>
+     * Calling with null will terminate the PublishProcessor and a NullPointerException
+     * is signalled to the Subscribers.
+     * @param t the item to emit, not null
+     * @return true if the item was emitted to all Subscribers
+     * @since 2.0.8 - experimental
+     */
+    @Experimental
+    public boolean offer(T t) {
+        if (t == null) {
+            onError(new NullPointerException("onNext called with null. Null values are generally not allowed in 2.x operators and sources."));
+            return true;
+        }
+        PublishSubscription<T>[] array = subscribers.get();
+
+        for (PublishSubscription<T> s : array) {
+            if (s.isFull()) {
+                return false;
+            }
+        }
+
+        for (PublishSubscription<T> s : array) {
+            s.onNext(t);
+        }
+        return true;
+    }
+
     @Override
     public boolean hasSubscribers() {
         return subscribers.get().length != 0;
@@ -318,6 +353,10 @@ public final class PublishProcessor<T> extends FlowableProcessor<T> {
 
         public boolean isCancelled() {
             return get() == Long.MIN_VALUE;
+        }
+
+        boolean isFull() {
+            return get() == 0L;
         }
     }
 }

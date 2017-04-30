@@ -1,5 +1,5 @@
 /**
- * Copyright 2016 Netflix, Inc.
+ * Copyright (c) 2016-present, RxJava Contributors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
@@ -16,8 +16,10 @@ package io.reactivex.internal.disposables;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.reactivex.disposables.Disposable;
+import io.reactivex.exceptions.ProtocolViolationException;
 import io.reactivex.internal.functions.ObjectHelper;
 import io.reactivex.plugins.RxJavaPlugins;
+
 
 /**
  * Utility methods for working with Disposables atomically.
@@ -152,7 +154,7 @@ public enum DisposableHelper implements Disposable {
      * Reports that the disposable is already set to the RxJavaPlugins error handler.
      */
     public static void reportDisposableSet() {
-        RxJavaPlugins.onError(new IllegalStateException("Disposable already set!"));
+        RxJavaPlugins.onError(new ProtocolViolationException("Disposable already set!"));
     }
 
     /**

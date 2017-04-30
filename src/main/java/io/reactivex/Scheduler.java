@@ -1,5 +1,5 @@
 /**
- * Copyright 2016 Netflix, Inc.
+ * Copyright (c) 2016-present, RxJava Contributors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
@@ -15,12 +15,12 @@ package io.reactivex;
 
 import java.util.concurrent.TimeUnit;
 
-import io.reactivex.annotations.Experimental;
+import io.reactivex.annotations.*;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.exceptions.Exceptions;
 import io.reactivex.functions.Function;
 import io.reactivex.internal.disposables.*;
-import io.reactivex.internal.schedulers.SchedulerWhen;
+import io.reactivex.internal.schedulers.*;
 import io.reactivex.internal.util.ExceptionHelper;
 import io.reactivex.plugins.RxJavaPlugins;
 
@@ -61,6 +61,7 @@ public abstract class Scheduler {
      *
      * @return a Worker representing a serial queue of actions to be executed
      */
+    @NonNull
     public abstract Worker createWorker();
 
     /**
@@ -69,7 +70,7 @@ public abstract class Scheduler {
      * @return the 'current time'
      * @since 2.0
      */
-    public long now(TimeUnit unit) {
+    public long now(@NonNull TimeUnit unit) {
         return unit.convert(System.currentTimeMillis(), TimeUnit.MILLISECONDS);
     }
 
@@ -105,7 +106,8 @@ public abstract class Scheduler {
      * @return the Disposable instance that let's one cancel this particular task.
      * @since 2.0
      */
-    public Disposable scheduleDirect(Runnable run) {
+    @NonNull
+    public Disposable scheduleDirect(@NonNull Runnable run) {
         return scheduleDirect(run, 0L, TimeUnit.NANOSECONDS);
     }
 
@@ -122,23 +124,17 @@ public abstract class Scheduler {
      * @return the Disposable that let's one cancel this particular delayed task.
      * @since 2.0
      */
-    public Disposable scheduleDirect(Runnable run, long delay, TimeUnit unit) {
+    @NonNull
+    public Disposable scheduleDirect(@NonNull Runnable run, long delay, @NonNull TimeUnit unit) {
         final Worker w = createWorker();
 
         final Runnable decoratedRun = RxJavaPlugins.onSchedule(run);
 
-        w.schedule(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    decoratedRun.run();
-                } finally {
-                    w.dispose();
-                }
-            }
-        }, delay, unit);
+        DisposeTask task = new DisposeTask(decoratedRun, w);
 
-        return w;
+        w.schedule(task, delay, unit);
+
+        return task;
     }
 
     /**
@@ -159,7 +155,8 @@ public abstract class Scheduler {
      * @return the Disposable that let's one cancel this particular delayed task.
      * @since 2.0
      */
-    public Disposable schedulePeriodicallyDirect(Runnable run, long initialDelay, long period, TimeUnit unit) {
+    @NonNull
+    public Disposable schedulePeriodicallyDirect(@NonNull Runnable run, long initialDelay, long period, @NonNull TimeUnit unit) {
         final Worker w = createWorker();
 
         final Runnable decoratedRun = RxJavaPlugins.onSchedule(run);
@@ -202,7 +199,7 @@ public abstract class Scheduler {
      * size thread pool:
      * 
      * <pre>
-     * Scheduler limitSched = Schedulers.computation().when(workers -> {
+     * Scheduler limitScheduler = Schedulers.computation().when(workers -> {
      *  // use merge max concurrent to limit the number of concurrent
      *  // callbacks two at a time
      *  return Completable.merge(Flowable.merge(workers), 2);
@@ -220,7 +217,7 @@ public abstract class Scheduler {
      * subscription to the second.
      * 
      * <pre>
-     * Scheduler limitSched = Schedulers.computation().when(workers -> {
+     * Scheduler limitScheduler = Schedulers.computation().when(workers -> {
      *  // use merge max concurrent to limit the number of concurrent
      *  // Flowables two at a time
      *  return Completable.merge(Flowable.merge(workers, 2));
@@ -233,7 +230,7 @@ public abstract class Scheduler {
      * bucket algorithm).
      * 
      * <pre>
-     * Scheduler slowSched = Schedulers.computation().when(workers -> {
+     * Scheduler slowScheduler = Schedulers.computation().when(workers -> {
      *  // use concatenate to make each worker happen one at a time.
      *  return Completable.concat(workers.map(actions -> {
      *      // delay the starting of the next worker by 1 second.
@@ -242,21 +239,23 @@ public abstract class Scheduler {
      * });
      * </pre>
      * 
+     * <p>History: 2.0.1 - experimental
      * @param <S> a Scheduler and a Subscription
      * @param combine the function that takes a two-level nested Flowable sequence of a Completable and returns
      * the Completable that will be subscribed to and should trigger the execution of the scheduled Actions.
      * @return the Scheduler with the customized execution behavior
+     * @since 2.1
      */
     @SuppressWarnings("unchecked")
-    @Experimental
-    public <S extends Scheduler & Disposable> S when(Function<Flowable<Flowable<Completable>>, Completable> combine) {
+    @NonNull
+    public <S extends Scheduler & Disposable> S when(@NonNull Function<Flowable<Flowable<Completable>>, Completable> combine) {
         return (S) new SchedulerWhen(combine, this);
     }
 
     /**
      * Sequential Scheduler for executing actions on a single thread or event loop.
      * <p>
-     * Unsubscribing the {@link Worker} cancels all outstanding work and allows resource cleanup.
+     * Disposing the {@link Worker} cancels all outstanding work and allows resource cleanup.
      */
     public abstract static class Worker implements Disposable {
         /**
@@ -268,7 +267,8 @@ public abstract class Scheduler {
          *            Runnable to schedule
          * @return a Disposable to be able to unsubscribe the action (cancel it if not executed)
          */
-        public Disposable schedule(Runnable run) {
+        @NonNull
+        public Disposable schedule(@NonNull Runnable run) {
             return schedule(run, 0L, TimeUnit.NANOSECONDS);
         }
 
@@ -287,7 +287,8 @@ public abstract class Scheduler {
          *            the time unit of {@code delayTime}
          * @return a Disposable to be able to unsubscribe the action (cancel it if not executed)
          */
-        public abstract Disposable schedule(Runnable run, long delay, TimeUnit unit);
+        @NonNull
+        public abstract Disposable schedule(@NonNull Runnable run, long delay, @NonNull TimeUnit unit);
 
         /**
          * Schedules a cancelable action to be executed periodically. This default implementation schedules
@@ -309,7 +310,8 @@ public abstract class Scheduler {
          *            the time unit of {@code period}
          * @return a Disposable to be able to unsubscribe the action (cancel it if not executed)
          */
-        public Disposable schedulePeriodically(Runnable run, final long initialDelay, final long period, final TimeUnit unit) {
+        @NonNull
+        public Disposable schedulePeriodically(@NonNull Runnable run, final long initialDelay, final long period, @NonNull final TimeUnit unit) {
             final SequentialDisposable first = new SequentialDisposable();
 
             final SequentialDisposable sd = new SequentialDisposable(first);
@@ -337,7 +339,7 @@ public abstract class Scheduler {
          * @return the 'current time'
          * @since 2.0
          */
-        public long now(TimeUnit unit) {
+        public long now(@NonNull TimeUnit unit) {
             return unit.convert(System.currentTimeMillis(), TimeUnit.MILLISECONDS);
         }
 
@@ -346,15 +348,17 @@ public abstract class Scheduler {
          * of this task has to happen (accounting for clock drifts).
          */
         final class PeriodicTask implements Runnable {
+            @NonNull
             final Runnable decoratedRun;
+            @NonNull
             final SequentialDisposable sd;
             final long periodInNanoseconds;
             long count;
             long lastNowNanoseconds;
             long startInNanoseconds;
 
-            PeriodicTask(long firstStartInNanoseconds, Runnable decoratedRun,
-                    long firstNowNanoseconds, SequentialDisposable sd, long periodInNanoseconds) {
+            PeriodicTask(long firstStartInNanoseconds, @NonNull Runnable decoratedRun,
+                    long firstNowNanoseconds, @NonNull SequentialDisposable sd, long periodInNanoseconds) {
                 this.decoratedRun = decoratedRun;
                 this.sd = sd;
                 this.periodInNanoseconds = periodInNanoseconds;
@@ -395,12 +399,12 @@ public abstract class Scheduler {
     static class PeriodicDirectTask
     implements Runnable, Disposable {
         final Runnable run;
-
+        @NonNull
         final Worker worker;
-
+        @NonNull
         volatile boolean disposed;
 
-        PeriodicDirectTask(Runnable run, Worker worker) {
+        PeriodicDirectTask(@NonNull Runnable run, @NonNull Worker worker) {
             this.run = run;
             this.worker = worker;
         }
@@ -427,6 +431,43 @@ public abstract class Scheduler {
         @Override
         public boolean isDisposed() {
             return disposed;
+        }
+    }
+
+    static final class DisposeTask implements Runnable, Disposable {
+        final Runnable decoratedRun;
+        final Worker w;
+
+        Thread runner;
+
+        DisposeTask(Runnable decoratedRun, Worker w) {
+            this.decoratedRun = decoratedRun;
+            this.w = w;
+        }
+
+        @Override
+        public void run() {
+            runner = Thread.currentThread();
+            try {
+                decoratedRun.run();
+            } finally {
+                dispose();
+                runner = null;
+            }
+        }
+
+        @Override
+        public void dispose() {
+            if (runner == Thread.currentThread() && w instanceof NewThreadWorker) {
+                ((NewThreadWorker)w).shutdown();
+            } else {
+                w.dispose();
+            }
+        }
+
+        @Override
+        public boolean isDisposed() {
+            return w.isDisposed();
         }
     }
 }

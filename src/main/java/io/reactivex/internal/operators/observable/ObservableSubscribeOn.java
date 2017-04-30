@@ -1,5 +1,5 @@
 /**
- * Copyright 2016 Netflix, Inc.
+ * Copyright (c) 2016-present, RxJava Contributors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
@@ -33,12 +33,7 @@ public final class ObservableSubscribeOn<T> extends AbstractObservableWithUpstre
 
         s.onSubscribe(parent);
 
-        parent.setDisposable(scheduler.scheduleDirect(new Runnable() {
-            @Override
-            public void run() {
-                source.subscribe(parent);
-            }
-        }));
+        parent.setDisposable(scheduler.scheduleDirect(new SubscribeTask(parent)));
     }
 
     static final class SubscribeOnObserver<T> extends AtomicReference<Disposable> implements Observer<T>, Disposable {
@@ -86,6 +81,19 @@ public final class ObservableSubscribeOn<T> extends AbstractObservableWithUpstre
 
         void setDisposable(Disposable d) {
             DisposableHelper.setOnce(this, d);
+        }
+    }
+
+    final class SubscribeTask implements Runnable {
+        private final SubscribeOnObserver<T> parent;
+
+        SubscribeTask(SubscribeOnObserver<T> parent) {
+            this.parent = parent;
+        }
+
+        @Override
+        public void run() {
+            source.subscribe(parent);
         }
     }
 }

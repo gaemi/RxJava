@@ -1,5 +1,5 @@
 /**
- * Copyright 2016 Netflix, Inc.
+ * Copyright (c) 2016-present, RxJava Contributors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
@@ -18,7 +18,7 @@ import java.util.concurrent.*;
 import org.reactivestreams.*;
 
 import io.reactivex.functions.*;
-import io.reactivex.internal.functions.Functions;
+import io.reactivex.internal.functions.*;
 import io.reactivex.internal.subscribers.*;
 import io.reactivex.internal.util.*;
 
@@ -57,6 +57,7 @@ public final class FlowableBlockingSubscribe {
                     if (bs.isCancelled()) {
                         break;
                     }
+                    BlockingHelper.verifyNonBlocking();
                     v = queue.take();
                 }
                 if (bs.isCancelled()) {
@@ -102,6 +103,9 @@ public final class FlowableBlockingSubscribe {
      */
     public static <T> void subscribe(Publisher<? extends T> o, final Consumer<? super T> onNext,
             final Consumer<? super Throwable> onError, final Action onComplete) {
+        ObjectHelper.requireNonNull(onNext, "onNext is null");
+        ObjectHelper.requireNonNull(onError, "onError is null");
+        ObjectHelper.requireNonNull(onComplete, "onComplete is null");
         subscribe(o, new LambdaSubscriber<T>(onNext, onError, onComplete, Functions.REQUEST_MAX));
     }
 }

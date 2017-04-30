@@ -1,5 +1,5 @@
 /**
- * Copyright 2016 Netflix, Inc.
+ * Copyright (c) 2016-present, RxJava Contributors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
@@ -47,6 +47,7 @@ public final class LambdaObserver<T> extends AtomicReference<Disposable> impleme
                 onSubscribe.accept(this);
             } catch (Throwable ex) {
                 Exceptions.throwIfFatal(ex);
+                s.dispose();
                 onError(ex);
             }
         }
@@ -59,6 +60,7 @@ public final class LambdaObserver<T> extends AtomicReference<Disposable> impleme
                 onNext.accept(t);
             } catch (Throwable e) {
                 Exceptions.throwIfFatal(e);
+                get().dispose();
                 onError(e);
             }
         }
@@ -67,7 +69,7 @@ public final class LambdaObserver<T> extends AtomicReference<Disposable> impleme
     @Override
     public void onError(Throwable t) {
         if (!isDisposed()) {
-            dispose();
+            lazySet(DisposableHelper.DISPOSED);
             try {
                 onError.accept(t);
             } catch (Throwable e) {
@@ -80,7 +82,7 @@ public final class LambdaObserver<T> extends AtomicReference<Disposable> impleme
     @Override
     public void onComplete() {
         if (!isDisposed()) {
-            dispose();
+            lazySet(DisposableHelper.DISPOSED);
             try {
                 onComplete.run();
             } catch (Throwable e) {

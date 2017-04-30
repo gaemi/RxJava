@@ -1,5 +1,5 @@
 /**
- * Copyright 2016 Netflix, Inc.
+ * Copyright (c) 2016-present, RxJava Contributors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
@@ -609,7 +609,7 @@ public class FlowableFlattenIterableTest {
     public void fusionMethods() {
         Flowable.just(1, 2)
         .flatMapIterable(Functions.justFunction(Arrays.asList(1, 2, 3)))
-        .subscribe(new Subscriber<Integer>() {
+        .subscribe(new FlowableSubscriber<Integer>() {
             @Override
             public void onSubscribe(Subscription s) {
                 @SuppressWarnings("unchecked")
@@ -737,7 +737,7 @@ public class FlowableFlattenIterableTest {
                 return Arrays.asList(v);
             }
         })
-        .subscribe(new Subscriber<Integer>() {
+        .subscribe(new FlowableSubscriber<Integer>() {
             @Override
             public void onSubscribe(Subscription s) {
                 @SuppressWarnings("unchecked")
@@ -862,5 +862,56 @@ public class FlowableFlattenIterableTest {
         .subscribe(ts);
 
         ts.assertResult(1);
+    }
+
+    @Test
+    public void doubleShare() {
+        Iterable<Integer> it = Flowable.range(1, 300).blockingIterable();
+            Flowable.just(it, it)
+            .flatMapIterable(Functions.<Iterable<Integer>>identity())
+            .share()
+            .share()
+            .count()
+            .test()
+            .assertResult(600L);
+    }
+
+    @Test
+    public void multiShare() {
+        Iterable<Integer> it = Flowable.range(1, 300).blockingIterable();
+        for (int i = 0; i < 5; i++) {
+            Flowable<Integer> f = Flowable.just(it, it)
+            .flatMapIterable(Functions.<Iterable<Integer>>identity());
+
+            for (int j = 0; j < i; j++) {
+                f = f.share();
+            }
+
+            f
+            .count()
+            .test()
+            .withTag("Share: " + i)
+            .assertResult(600L);
+        }
+    }
+
+    @Test
+    public void multiShareHidden() {
+        Iterable<Integer> it = Flowable.range(1, 300).blockingIterable();
+        for (int i = 0; i < 5; i++) {
+            Flowable<Integer> f = Flowable.just(it, it)
+            .flatMapIterable(Functions.<Iterable<Integer>>identity())
+            .hide();
+
+            for (int j = 0; j < i; j++) {
+                f = f.share();
+            }
+
+            f
+            .count()
+            .test()
+            .withTag("Share: " + i)
+            .assertResult(600L);
+        }
     }
 }

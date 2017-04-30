@@ -1,5 +1,5 @@
 /**
- * Copyright 2016 Netflix, Inc.
+ * Copyright (c) 2016-present, RxJava Contributors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
@@ -42,36 +42,53 @@ public final class CompletableDelay extends Completable {
     protected void subscribeActual(final CompletableObserver s) {
         final CompositeDisposable set = new CompositeDisposable();
 
-        source.subscribe(new CompletableObserver() {
-
-
-            @Override
-            public void onComplete() {
-                set.add(scheduler.scheduleDirect(new Runnable() {
-                    @Override
-                    public void run() {
-                        s.onComplete();
-                    }
-                }, delay, unit));
-            }
-
-            @Override
-            public void onError(final Throwable e) {
-                set.add(scheduler.scheduleDirect(new Runnable() {
-                    @Override
-                    public void run() {
-                        s.onError(e);
-                    }
-                }, delayError ? delay : 0, unit));
-            }
-
-            @Override
-            public void onSubscribe(Disposable d) {
-                set.add(d);
-                s.onSubscribe(set);
-            }
-
-        });
+        source.subscribe(new Delay(set, s));
     }
 
+    final class Delay implements CompletableObserver {
+
+        private final CompositeDisposable set;
+        final CompletableObserver s;
+
+        Delay(CompositeDisposable set, CompletableObserver s) {
+            this.set = set;
+            this.s = s;
+        }
+
+        @Override
+        public void onComplete() {
+            set.add(scheduler.scheduleDirect(new OnComplete(), delay, unit));
+        }
+
+        @Override
+        public void onError(final Throwable e) {
+            set.add(scheduler.scheduleDirect(new OnError(e), delayError ? delay : 0, unit));
+        }
+
+        @Override
+        public void onSubscribe(Disposable d) {
+            set.add(d);
+            s.onSubscribe(set);
+        }
+
+        final class OnComplete implements Runnable {
+            @Override
+            public void run() {
+                s.onComplete();
+            }
+        }
+
+        final class OnError implements Runnable {
+            private final Throwable e;
+
+            OnError(Throwable e) {
+                this.e = e;
+            }
+
+            @Override
+            public void run() {
+                s.onError(e);
+            }
+        }
+    }
 }

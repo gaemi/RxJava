@@ -1,5 +1,5 @@
 /**
- * Copyright 2016 Netflix, Inc.
+ * Copyright (c) 2016-present, RxJava Contributors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
@@ -46,7 +46,8 @@ public abstract class Completable implements CompletableSource {
      *  <dt><b>Scheduler:</b></dt>
      *  <dd>{@code ambArray} does not operate by default on a particular {@link Scheduler}.</dd>
      * </dl>
-     * @param sources the array of source Completables
+     * @param sources the array of source Completables. A subscription to each source will
+     *            occur in the same order as in this array.
      * @return the new Completable instance
      * @throws NullPointerException if sources is null
      */
@@ -71,7 +72,8 @@ public abstract class Completable implements CompletableSource {
      *  <dt><b>Scheduler:</b></dt>
      *  <dd>{@code amb} does not operate by default on a particular {@link Scheduler}.</dd>
      * </dl>
-     * @param sources the array of source Completables
+     * @param sources the array of source Completables. A subscription to each source will
+     *            occur in the same order as in this Iterable.
      * @return the new Completable instance
      * @throws NullPointerException if sources is null
      */
@@ -776,7 +778,8 @@ public abstract class Completable implements CompletableSource {
      *  <dt><b>Scheduler:</b></dt>
      *  <dd>{@code ambWith} does not operate by default on a particular {@link Scheduler}.</dd>
      * </dl>
-     * @param other the other Completable, not null
+     * @param other the other Completable, not null. A subscription to this provided source will occur after subscribing
+     *            to the current source.
      * @return the new Completable instance
      * @throws NullPointerException if other is null
      */
@@ -926,6 +929,7 @@ public abstract class Completable implements CompletableSource {
     @CheckReturnValue
     @SchedulerSupport(SchedulerSupport.NONE)
     public final boolean blockingAwait(long timeout, TimeUnit unit) {
+        ObjectHelper.requireNonNull(unit, "unit is null");
         BlockingMultiObserver<Void> observer = new BlockingMultiObserver<Void>();
         subscribe(observer);
         return observer.blockingAwait(timeout, unit);
@@ -982,12 +986,12 @@ public abstract class Completable implements CompletableSource {
      *  <dt><b>Scheduler:</b></dt>
      *  <dd>{@code cache} does not operate by default on a particular {@link Scheduler}.</dd>
      * </dl>
+     * <p>History: 2.0.4 - experimental
      * @return the new Completable instance
-     * @since 2.0.4 - experimental
+     * @since 2.1
      */
     @CheckReturnValue
     @SchedulerSupport(SchedulerSupport.NONE)
-    @Experimental
     public final Completable cache() {
         return RxJavaPlugins.onAssembly(new CompletableCache(this));
     }
@@ -1006,7 +1010,7 @@ public abstract class Completable implements CompletableSource {
     @CheckReturnValue
     @SchedulerSupport(SchedulerSupport.NONE)
     public final Completable compose(CompletableTransformer transformer) {
-        return wrap(transformer.apply(this));
+        return wrap(ObjectHelper.requireNonNull(transformer, "transformer is null").apply(this));
     }
 
     /**
@@ -1103,13 +1107,13 @@ public abstract class Completable implements CompletableSource {
     }
 
     /**
-     * Returns a Completable which calls the given onDispose callback if the child subscriber cancels
-     * the subscription.
+     * Calls the shared {@code Action} if a CompletableObserver subscribed to the current
+     * Completable disposes the common Disposable it received via onSubscribe.
      * <dl>
      *  <dt><b>Scheduler:</b></dt>
      *  <dd>{@code doOnDispose} does not operate by default on a particular {@link Scheduler}.</dd>
      * </dl>
-     * @param onDispose the callback to call when the child subscriber disposes the subscription
+     * @param onDispose the action to call when the child subscriber disposes the subscription
      * @return the new Completable instance
      * @throws NullPointerException if onDispose is null
      */
@@ -1258,13 +1262,13 @@ public abstract class Completable implements CompletableSource {
      *  <dt><b>Scheduler:</b></dt>
      *  <dd>{@code doFinally} does not operate by default on a particular {@link Scheduler}.</dd>
      * </dl>
+     * <p>History: 2.0.1 - experimental
      * @param onFinally the action called when this Completable terminates or gets cancelled
      * @return the new Completable instance
-     * @since 2.0.1 - experimental
+     * @since 2.1
      */
     @CheckReturnValue
     @SchedulerSupport(SchedulerSupport.NONE)
-    @Experimental
     public final Completable doFinally(Action onFinally) {
         ObjectHelper.requireNonNull(onFinally, "onFinally is null");
         return RxJavaPlugins.onAssembly(new CompletableDoFinally(this, onFinally));
@@ -1438,7 +1442,7 @@ public abstract class Completable implements CompletableSource {
      */
     @CheckReturnValue
     @SchedulerSupport(SchedulerSupport.NONE)
-    public final Completable repeatWhen(Function<? super Flowable<Object>, ? extends Publisher<Object>> handler) {
+    public final Completable repeatWhen(Function<? super Flowable<Object>, ? extends Publisher<?>> handler) {
         return fromPublisher(toFlowable().repeatWhen(handler));
     }
 
@@ -1523,7 +1527,7 @@ public abstract class Completable implements CompletableSource {
      */
     @CheckReturnValue
     @SchedulerSupport(SchedulerSupport.NONE)
-    public final Completable retryWhen(Function<? super Flowable<Throwable>, ? extends Publisher<Object>> handler) {
+    public final Completable retryWhen(Function<? super Flowable<Throwable>, ? extends Publisher<?>> handler) {
         return fromPublisher(toFlowable().retryWhen(handler));
     }
 
@@ -1584,6 +1588,24 @@ public abstract class Completable implements CompletableSource {
     public final <T> Flowable<T> startWith(Publisher<T> other) {
         ObjectHelper.requireNonNull(other, "other is null");
         return this.<T>toFlowable().startWith(other);
+    }
+
+    /**
+     * Hides the identity of this Completable and its Disposable.
+     * <p>Allows preventing certain identity-based
+     * optimizations (fusion).
+     * <dl>
+     *  <dt><b>Scheduler:</b></dt>
+     *  <dd>{@code hide} does not operate by default on a particular {@link Scheduler}.</dd>
+     * </dl>
+     * <p>History: 2.0.5 - experimental
+     * @return the new Completable instance
+     * @since 2.1
+     */
+    @CheckReturnValue
+    @SchedulerSupport(SchedulerSupport.NONE)
+    public final Completable hide() {
+        return RxJavaPlugins.onAssembly(new CompletableHide(this));
     }
 
     /**
@@ -1684,7 +1706,9 @@ public abstract class Completable implements CompletableSource {
      * Subscribes to this Completable and calls the given Action when this Completable
      * completes normally.
      * <p>
-     * If this Completable emits an error, it is sent to RxJavaPlugins.onError and gets swallowed.
+     * If the Completable emits an error, it is wrapped into an
+     * {@link io.reactivex.exceptions.OnErrorNotImplementedException OnErrorNotImplementedException}
+     * and routed to the RxJavaPlugins.onError handler.
      * <dl>
      *  <dt><b>Scheduler:</b></dt>
      *  <dd>{@code subscribe} does not operate by default on a particular {@link Scheduler}.</dd>
@@ -1842,7 +1866,7 @@ public abstract class Completable implements CompletableSource {
     @SchedulerSupport(SchedulerSupport.NONE)
     public final <U> U to(Function<? super Completable, U> converter) {
         try {
-            return converter.apply(this);
+            return ObjectHelper.requireNonNull(converter, "converter is null").apply(this);
         } catch (Throwable ex) {
             Exceptions.throwIfFatal(ex);
             throw ExceptionHelper.wrapOrThrow(ex);
@@ -1875,7 +1899,7 @@ public abstract class Completable implements CompletableSource {
     /**
      * Converts this Completable into a {@link Maybe}.
      * <p>
-     * <img width="640" height="305" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/Completable.toObservable.png" alt="">
+     * <img width="640" height="293" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/Completable.toObservable.png" alt="">
      * <dl>
      * <dt><b>Scheduler:</b></dt>
      * <dd>{@code toMaybe} does not operate by default on a particular {@link Scheduler}.</dd>

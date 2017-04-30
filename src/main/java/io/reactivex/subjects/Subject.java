@@ -1,5 +1,5 @@
 /**
- * Copyright 2016 Netflix, Inc.
+ * Copyright (c) 2016-present, RxJava Contributors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
@@ -14,6 +14,7 @@
 package io.reactivex.subjects;
 
 import io.reactivex.*;
+import io.reactivex.annotations.*;
 
 /**
  * Represents an Observer and an Observable at the same time, allowing
@@ -55,6 +56,7 @@ public abstract class Subject<T> extends Observable<T> implements Observer<T> {
      * @return the error that caused the Subject to terminate or null if the Subject
      * hasn't terminated yet
      */
+    @Nullable
     public abstract Throwable getThrowable();
 
     /**
@@ -63,6 +65,7 @@ public abstract class Subject<T> extends Observable<T> implements Observer<T> {
      * <p>The method is thread-safe.
      * @return the wrapped and serialized subject
      */
+    @NonNull
     public final Subject<T> toSerialized() {
         if (this instanceof SerializedSubject) {
             return this;

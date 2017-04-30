@@ -1,5 +1,5 @@
 /**
- * Copyright 2016 Netflix, Inc.
+ * Copyright (c) 2016-present, RxJava Contributors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
@@ -21,7 +21,6 @@ import io.reactivex.exceptions.Exceptions;
 import io.reactivex.functions.BiFunction;
 import io.reactivex.internal.functions.ObjectHelper;
 import io.reactivex.internal.subscriptions.SubscriptionHelper;
-import io.reactivex.plugins.RxJavaPlugins;
 
 /**
  * Reduce a sequence of values, starting from a seed value and by using
@@ -49,7 +48,7 @@ public final class FlowableReduceSeedSingle<T, R> extends Single<R> {
         source.subscribe(new ReduceSeedObserver<T, R>(observer, reducer, seed));
     }
 
-    static final class ReduceSeedObserver<T, R> implements Subscriber<T>, Disposable {
+    static final class ReduceSeedObserver<T, R> implements FlowableSubscriber<T>, Disposable {
 
         final SingleObserver<? super R> actual;
 
@@ -79,37 +78,28 @@ public final class FlowableReduceSeedSingle<T, R> extends Single<R> {
         @Override
         public void onNext(T value) {
             R v = this.value;
-            if (v != null) {
-                try {
-                    this.value = ObjectHelper.requireNonNull(reducer.apply(v, value), "The reducer returned a null value");
-                } catch (Throwable ex) {
-                    Exceptions.throwIfFatal(ex);
-                    s.cancel();
-                    onError(ex);
-                }
+            try {
+                this.value = ObjectHelper.requireNonNull(reducer.apply(v, value), "The reducer returned a null value");
+            } catch (Throwable ex) {
+                Exceptions.throwIfFatal(ex);
+                s.cancel();
+                onError(ex);
             }
         }
 
         @Override
         public void onError(Throwable e) {
-            R v = value;
             value = null;
-            if (v != null) {
-                s = SubscriptionHelper.CANCELLED;
-                actual.onError(e);
-            } else {
-                RxJavaPlugins.onError(e);
-            }
+            s = SubscriptionHelper.CANCELLED;
+            actual.onError(e);
         }
 
         @Override
         public void onComplete() {
             R v = value;
             value = null;
-            if (v != null) {
-                s = SubscriptionHelper.CANCELLED;
-                actual.onSuccess(v);
-            }
+            s = SubscriptionHelper.CANCELLED;
+            actual.onSuccess(v);
         }
 
         @Override

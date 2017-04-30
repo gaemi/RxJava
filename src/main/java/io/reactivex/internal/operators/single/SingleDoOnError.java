@@ -1,5 +1,5 @@
 /**
- * Copyright 2016 Netflix, Inc.
+ * Copyright (c) 2016-present, RxJava Contributors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
@@ -32,29 +32,36 @@ public final class SingleDoOnError<T> extends Single<T> {
     @Override
     protected void subscribeActual(final SingleObserver<? super T> s) {
 
-        source.subscribe(new SingleObserver<T>() {
-            @Override
-            public void onSubscribe(Disposable d) {
-                s.onSubscribe(d);
-            }
-
-            @Override
-            public void onSuccess(T value) {
-                s.onSuccess(value);
-            }
-
-            @Override
-            public void onError(Throwable e) {
-                try {
-                    onError.accept(e);
-                } catch (Throwable ex) {
-                    Exceptions.throwIfFatal(ex);
-                    e = new CompositeException(e, ex);
-                }
-                s.onError(e);
-            }
-
-        });
+        source.subscribe(new DoOnError(s));
     }
 
+    final class DoOnError implements SingleObserver<T> {
+        private final SingleObserver<? super T> s;
+
+        DoOnError(SingleObserver<? super T> s) {
+            this.s = s;
+        }
+
+        @Override
+        public void onSubscribe(Disposable d) {
+            s.onSubscribe(d);
+        }
+
+        @Override
+        public void onSuccess(T value) {
+            s.onSuccess(value);
+        }
+
+        @Override
+        public void onError(Throwable e) {
+            try {
+                onError.accept(e);
+            } catch (Throwable ex) {
+                Exceptions.throwIfFatal(ex);
+                e = new CompositeException(e, ex);
+            }
+            s.onError(e);
+        }
+
+    }
 }

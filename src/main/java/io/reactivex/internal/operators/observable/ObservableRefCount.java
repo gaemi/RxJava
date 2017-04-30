@@ -1,5 +1,5 @@
 /**
- * Copyright 2016 Netflix, Inc.
+ * Copyright (c) 2016-present, RxJava Contributors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
@@ -89,20 +89,7 @@ public final class ObservableRefCount<T> extends AbstractObservableWithUpstream<
 
     private Consumer<Disposable> onSubscribe(final Observer<? super T> observer,
             final AtomicBoolean writeLocked) {
-        return  new Consumer<Disposable>() {
-            @Override
-            public void accept(Disposable subscription) {
-                try {
-                    baseDisposable.add(subscription);
-                    // ready to subscribe to source so do it
-                    doSubscribe(observer, baseDisposable);
-                } finally {
-                    // release the write lock
-                    lock.unlock();
-                    writeLocked.set(false);
-                }
-            }
-        };
+        return new DisposeConsumer(observer, writeLocked);
     }
 
     void doSubscribe(final Observer<? super T> observer, final CompositeDisposable currentBase) {
@@ -116,24 +103,7 @@ public final class ObservableRefCount<T> extends AbstractObservableWithUpstream<
     }
 
     private Disposable disconnect(final CompositeDisposable current) {
-        return Disposables.fromRunnable(new Runnable() {
-            @Override
-            public void run() {
-                lock.lock();
-                try {
-                    if (baseDisposable == current) {
-                        if (subscriptionCount.decrementAndGet() == 0) {
-                            baseDisposable.dispose();
-                            // need a new baseDisposable because once
-                            // disposed stays that way
-                            baseDisposable = new CompositeDisposable();
-                        }
-                    }
-                } finally {
-                    lock.unlock();
-                }
-            }
-        });
+        return Disposables.fromRunnable(new DisposeTask(current));
     }
 
     final class ConnectionObserver
@@ -192,6 +162,10 @@ public final class ObservableRefCount<T> extends AbstractObservableWithUpstream<
             lock.lock();
             try {
                 if (baseDisposable == currentBase) {
+                    if (source instanceof Disposable) {
+                        ((Disposable)source).dispose();
+                    }
+
                     baseDisposable.dispose();
                     baseDisposable = new CompositeDisposable();
                     subscriptionCount.set(0);
@@ -202,4 +176,55 @@ public final class ObservableRefCount<T> extends AbstractObservableWithUpstream<
         }
     }
 
+    final class DisposeConsumer implements Consumer<Disposable> {
+        private final Observer<? super T> observer;
+        private final AtomicBoolean writeLocked;
+
+        DisposeConsumer(Observer<? super T> observer, AtomicBoolean writeLocked) {
+            this.observer = observer;
+            this.writeLocked = writeLocked;
+        }
+
+        @Override
+        public void accept(Disposable subscription) {
+            try {
+                baseDisposable.add(subscription);
+                // ready to subscribe to source so do it
+                doSubscribe(observer, baseDisposable);
+            } finally {
+                // release the write lock
+                lock.unlock();
+                writeLocked.set(false);
+            }
+        }
+    }
+
+    final class DisposeTask implements Runnable {
+        private final CompositeDisposable current;
+
+        DisposeTask(CompositeDisposable current) {
+            this.current = current;
+        }
+
+        @Override
+        public void run() {
+            lock.lock();
+            try {
+                if (baseDisposable == current) {
+                    if (subscriptionCount.decrementAndGet() == 0) {
+                        if (source instanceof Disposable) {
+                            ((Disposable)source).dispose();
+                        }
+
+                        baseDisposable.dispose();
+                        // need a new baseDisposable because once
+                        // disposed stays that way
+                        baseDisposable = new CompositeDisposable();
+                    }
+                }
+            } finally {
+                lock.unlock();
+            }
+        }
+    }
 }

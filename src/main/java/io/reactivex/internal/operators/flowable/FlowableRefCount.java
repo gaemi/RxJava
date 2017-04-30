@@ -1,5 +1,5 @@
 /**
- * Copyright 2016 Netflix, Inc.
+ * Copyright (c) 2016-present, RxJava Contributors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
@@ -18,6 +18,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import org.reactivestreams.*;
 
+import io.reactivex.FlowableSubscriber;
 import io.reactivex.disposables.*;
 import io.reactivex.flowables.ConnectableFlowable;
 import io.reactivex.functions.Consumer;
@@ -31,7 +32,7 @@ import io.reactivex.internal.subscriptions.SubscriptionHelper;
  *            the value type
  */
 public final class FlowableRefCount<T> extends AbstractFlowableWithUpstream<T, T> {
-    final ConnectableFlowable<? extends T> source;
+    final ConnectableFlowable<T> source;
     volatile CompositeDisposable baseDisposable = new CompositeDisposable();
     final AtomicInteger subscriptionCount = new AtomicInteger();
 
@@ -42,7 +43,7 @@ public final class FlowableRefCount<T> extends AbstractFlowableWithUpstream<T, T
 
     final class ConnectionSubscriber
     extends AtomicReference<Subscription>
-    implements Subscriber<T>, Subscription {
+    implements FlowableSubscriber<T>, Subscription {
 
         private static final long serialVersionUID = 152064694420235350L;
         final Subscriber<? super T> subscriber;
@@ -98,6 +99,9 @@ public final class FlowableRefCount<T> extends AbstractFlowableWithUpstream<T, T
             lock.lock();
             try {
                 if (baseDisposable == currentBase) {
+                    if (source instanceof Disposable) {
+                        ((Disposable)source).dispose();
+                    }
                     baseDisposable.dispose();
                     baseDisposable = new CompositeDisposable();
                     subscriptionCount.set(0);
@@ -155,20 +159,7 @@ public final class FlowableRefCount<T> extends AbstractFlowableWithUpstream<T, T
 
     private Consumer<Disposable> onSubscribe(final Subscriber<? super T> subscriber,
             final AtomicBoolean writeLocked) {
-        return new Consumer<Disposable>() {
-            @Override
-            public void accept(Disposable subscription) {
-                try {
-                    baseDisposable.add(subscription);
-                    // ready to subscribe to source so do it
-                    doSubscribe(subscriber, baseDisposable);
-                } finally {
-                    // release the write lock
-                    lock.unlock();
-                    writeLocked.set(false);
-                }
-            }
-        };
+        return new DisposeConsumer(subscriber, writeLocked);
     }
 
     void doSubscribe(final Subscriber<? super T> subscriber, final CompositeDisposable currentBase) {
@@ -182,23 +173,58 @@ public final class FlowableRefCount<T> extends AbstractFlowableWithUpstream<T, T
     }
 
     private Disposable disconnect(final CompositeDisposable current) {
-        return Disposables.fromRunnable(new Runnable() {
-            @Override
-            public void run() {
-                lock.lock();
-                try {
-                    if (baseDisposable == current) {
-                        if (subscriptionCount.decrementAndGet() == 0) {
-                            baseDisposable.dispose();
-                            // need a new baseDisposable because once
-                            // disposed stays that way
-                            baseDisposable = new CompositeDisposable();
-                        }
-                    }
-                } finally {
-                    lock.unlock();
-                }
+        return Disposables.fromRunnable(new DisposeTask(current));
+    }
+
+    final class DisposeConsumer implements Consumer<Disposable> {
+        private final Subscriber<? super T> subscriber;
+        private final AtomicBoolean writeLocked;
+
+        DisposeConsumer(Subscriber<? super T> subscriber, AtomicBoolean writeLocked) {
+            this.subscriber = subscriber;
+            this.writeLocked = writeLocked;
+        }
+
+        @Override
+        public void accept(Disposable subscription) {
+            try {
+                baseDisposable.add(subscription);
+                // ready to subscribe to source so do it
+                doSubscribe(subscriber, baseDisposable);
+            } finally {
+                // release the write lock
+                lock.unlock();
+                writeLocked.set(false);
             }
-        });
+        }
+    }
+
+    final class DisposeTask implements Runnable {
+        private final CompositeDisposable current;
+
+        DisposeTask(CompositeDisposable current) {
+            this.current = current;
+        }
+
+        @Override
+        public void run() {
+            lock.lock();
+            try {
+                if (baseDisposable == current) {
+                    if (subscriptionCount.decrementAndGet() == 0) {
+                        if (source instanceof Disposable) {
+                            ((Disposable)source).dispose();
+                        }
+
+                        baseDisposable.dispose();
+                        // need a new baseDisposable because once
+                        // disposed stays that way
+                        baseDisposable = new CompositeDisposable();
+                    }
+                }
+            } finally {
+                lock.unlock();
+            }
+        }
     }
 }

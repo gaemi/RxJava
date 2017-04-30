@@ -1,5 +1,5 @@
 /**
- * Copyright 2016 Netflix, Inc.
+ * Copyright (c) 2016-present, RxJava Contributors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
@@ -13,8 +13,11 @@
 
 package io.reactivex.processors;
 
+import io.reactivex.annotations.CheckReturnValue;
 import java.util.concurrent.atomic.*;
 
+import io.reactivex.annotations.Experimental;
+import io.reactivex.annotations.Nullable;
 import org.reactivestreams.*;
 
 import io.reactivex.internal.functions.ObjectHelper;
@@ -35,6 +38,8 @@ import io.reactivex.plugins.RxJavaPlugins;
  * will receive an IllegalStateException if this Processor hasn't terminated yet,
  * or the Subscribers receive the terminal event (error or completion) if this
  * Processor has terminated.
+ * <p>
+ * <img width="640" height="370" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/UnicastProcessor.png" alt="">
  *
  * @param <T> the value type received and emitted by this Processor subclass
  * @since 2.0
@@ -45,7 +50,10 @@ public final class UnicastProcessor<T> extends FlowableProcessor<T> {
 
     final AtomicReference<Runnable> onTerminate;
 
+    final boolean delayError;
+
     volatile boolean done;
+
     Throwable error;
 
     final AtomicReference<Subscriber<? super T>> actual;
@@ -65,6 +73,7 @@ public final class UnicastProcessor<T> extends FlowableProcessor<T> {
      * @param <T> the value type
      * @return an UnicastSubject instance
      */
+    @CheckReturnValue
     public static <T> UnicastProcessor<T> create() {
         return new UnicastProcessor<T>(bufferSize());
     }
@@ -75,8 +84,22 @@ public final class UnicastProcessor<T> extends FlowableProcessor<T> {
      * @param capacityHint the hint to size the internal unbounded buffer
      * @return an UnicastProcessor instance
      */
+    @CheckReturnValue
     public static <T> UnicastProcessor<T> create(int capacityHint) {
         return new UnicastProcessor<T>(capacityHint);
+    }
+
+    /**
+     * Creates an UnicastProcessor with default internal buffer capacity hint and delay error flag.
+     * @param <T> the value type
+     * @param delayError deliver pending onNext events before onError
+     * @return an UnicastProcessor instance
+     * @since 2.0.8 - experimental
+     */
+    @CheckReturnValue
+    @Experimental
+    public static <T> UnicastProcessor<T> create(boolean delayError) {
+        return new UnicastProcessor<T>(bufferSize(), null, delayError);
     }
 
     /**
@@ -91,8 +114,31 @@ public final class UnicastProcessor<T> extends FlowableProcessor<T> {
      * @param onCancelled the non null callback
      * @return an UnicastProcessor instance
      */
+    @CheckReturnValue
     public static <T> UnicastProcessor<T> create(int capacityHint, Runnable onCancelled) {
+        ObjectHelper.requireNonNull(onCancelled, "onTerminate");
         return new UnicastProcessor<T>(capacityHint, onCancelled);
+    }
+
+    /**
+     * Creates an UnicastProcessor with the given internal buffer capacity hint, delay error flag and a callback for
+     * the case when the single Subscriber cancels its subscription.
+     *
+     * <p>The callback, if not null, is called exactly once and
+     * non-overlapped with any active replay.
+     *
+     * @param <T> the value type
+     * @param capacityHint the hint to size the internal unbounded buffer
+     * @param onCancelled the non null callback
+     * @param delayError deliver pending onNext events before onError
+     * @return an UnicastProcessor instance
+     * @since 2.0.8 - experimental
+     */
+    @CheckReturnValue
+    @Experimental
+    public static <T> UnicastProcessor<T> create(int capacityHint, Runnable onCancelled, boolean delayError) {
+        ObjectHelper.requireNonNull(onCancelled, "onTerminate");
+        return new UnicastProcessor<T>(capacityHint, onCancelled, delayError);
     }
 
     /**
@@ -101,12 +147,7 @@ public final class UnicastProcessor<T> extends FlowableProcessor<T> {
      * @since 2.0
      */
     UnicastProcessor(int capacityHint) {
-        this.queue = new SpscLinkedArrayQueue<T>(ObjectHelper.verifyPositive(capacityHint, "capacityHint"));
-        this.onTerminate = new AtomicReference<Runnable>();
-        this.actual = new AtomicReference<Subscriber<? super T>>();
-        this.once = new AtomicBoolean();
-        this.wip = new UnicastQueueSubscription();
-        this.requested = new AtomicLong();
+        this(capacityHint,null, true);
     }
 
     /**
@@ -117,8 +158,21 @@ public final class UnicastProcessor<T> extends FlowableProcessor<T> {
      * @since 2.0
      */
     UnicastProcessor(int capacityHint, Runnable onTerminate) {
+        this(capacityHint, onTerminate, true);
+    }
+
+    /**
+     * Creates an UnicastProcessor with the given capacity hint and callback
+     * for when the Processor is terminated normally or its single Subscriber cancels.
+     * @param capacityHint the capacity hint for the internal, unbounded queue
+     * @param onTerminate the callback to run when the Processor is terminated or cancelled, null not allowed
+     * @param delayError deliver pending onNext events before onError
+     * @since 2.0.8 - experimental
+     */
+    UnicastProcessor(int capacityHint, Runnable onTerminate, boolean delayError) {
         this.queue = new SpscLinkedArrayQueue<T>(ObjectHelper.verifyPositive(capacityHint, "capacityHint"));
-        this.onTerminate = new AtomicReference<Runnable>(ObjectHelper.requireNonNull(onTerminate, "onTerminate"));
+        this.onTerminate = new AtomicReference<Runnable>(onTerminate);
+        this.delayError = delayError;
         this.actual = new AtomicReference<Subscriber<? super T>>();
         this.once = new AtomicBoolean();
         this.wip = new UnicastQueueSubscription();
@@ -136,7 +190,7 @@ public final class UnicastProcessor<T> extends FlowableProcessor<T> {
         int missed = 1;
 
         final SpscLinkedArrayQueue<T> q = queue;
-
+        final boolean failFast = !delayError;
         for (;;) {
 
             long r = requested.get();
@@ -148,7 +202,7 @@ public final class UnicastProcessor<T> extends FlowableProcessor<T> {
                 T t = q.poll();
                 boolean empty = t == null;
 
-                if (checkTerminated(d, empty, a, q)) {
+                if (checkTerminated(failFast, d, empty, a, q)) {
                     return;
                 }
 
@@ -161,7 +215,7 @@ public final class UnicastProcessor<T> extends FlowableProcessor<T> {
                 e++;
             }
 
-            if (r == e && checkTerminated(done, q.isEmpty(), a, q)) {
+            if (r == e && checkTerminated(failFast, done, q.isEmpty(), a, q)) {
                 return;
             }
 
@@ -180,7 +234,7 @@ public final class UnicastProcessor<T> extends FlowableProcessor<T> {
         int missed = 1;
 
         final SpscLinkedArrayQueue<T> q = queue;
-
+        final boolean failFast = !delayError;
         for (;;) {
 
             if (cancelled) {
@@ -191,6 +245,12 @@ public final class UnicastProcessor<T> extends FlowableProcessor<T> {
 
             boolean d = done;
 
+            if (failFast && d && error != null) {
+                q.clear();
+                actual.lazySet(null);
+                a.onError(error);
+                return;
+            }
             a.onNext(null);
 
             if (d) {
@@ -239,21 +299,30 @@ public final class UnicastProcessor<T> extends FlowableProcessor<T> {
         }
     }
 
-    boolean checkTerminated(boolean d, boolean empty, Subscriber<? super T> a, SpscLinkedArrayQueue<T> q) {
+    boolean checkTerminated(boolean failFast, boolean d, boolean empty, Subscriber<? super T> a, SpscLinkedArrayQueue<T> q) {
         if (cancelled) {
             q.clear();
             actual.lazySet(null);
             return true;
         }
-        if (d && empty) {
-            Throwable e = error;
-            actual.lazySet(null);
-            if (e != null) {
-                a.onError(e);
-            } else {
-                a.onComplete();
+
+        if (d) {
+            if (failFast && error != null) {
+                q.clear();
+                actual.lazySet(null);
+                a.onError(error);
+                return true;
             }
-            return true;
+            if (empty) {
+                Throwable e = error;
+                actual.lazySet(null);
+                if (e != null) {
+                    a.onError(e);
+                } else {
+                    a.onComplete();
+                }
+                return true;
+            }
         }
 
         return false;
@@ -336,6 +405,7 @@ public final class UnicastProcessor<T> extends FlowableProcessor<T> {
 
         private static final long serialVersionUID = -4896760517184205454L;
 
+        @Nullable
         @Override
         public T poll() {
             return queue.poll();

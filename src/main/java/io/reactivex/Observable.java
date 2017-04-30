@@ -1,5 +1,5 @@
 /**
- * Copyright 2016 Netflix, Inc.
+ * Copyright (c) 2016-present, RxJava Contributors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
@@ -47,7 +47,7 @@ import io.reactivex.schedulers.*;
  * <p>
  * The documentation for this class makes use of marble diagrams. The following legend explains these diagrams:
  * <p>
- * <img width="640" height="301" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/legend.png" alt="">
+ * <img width="640" height="317" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/legend.png" alt="">
  * <p>
  * For more information see the <a href="http://reactivex.io/documentation/ObservableSource.html">ReactiveX
  * documentation</a>.
@@ -69,7 +69,8 @@ public abstract class Observable<T> implements ObservableSource<T> {
      *
      * @param <T> the common element type
      * @param sources
-     *            an Iterable of ObservableSources sources competing to react first
+     *            an Iterable of ObservableSource sources competing to react first. A subscription to each source will
+     *            occur in the same order as in the Iterable.
      * @return an Observable that emits the same sequence as whichever of the source ObservableSources first
      *         emitted an item or sent a termination notification
      * @see <a href="http://reactivex.io/documentation/operators/amb.html">ReactiveX operators documentation: Amb</a>
@@ -93,7 +94,8 @@ public abstract class Observable<T> implements ObservableSource<T> {
      *
      * @param <T> the common element type
      * @param sources
-     *            an array of ObservableSource sources competing to react first
+     *            an array of ObservableSource sources competing to react first. A subscription to each source will
+     *            occur in the same order as in the array.
      * @return an Observable that emits the same sequence as whichever of the source ObservableSources first
      *         emitted an item or sent a termination notification
      * @see <a href="http://reactivex.io/documentation/operators/amb.html">ReactiveX operators documentation: Amb</a>
@@ -133,6 +135,10 @@ public abstract class Observable<T> implements ObservableSource<T> {
      * implementation of this operator has to create an {@code Object[]} instead. Unfortunately, a
      * {@code Function<Integer[], R>} passed to the method would trigger a {@code ClassCastException}.
      * <p>
+     * If any of the sources never produces an item but only terminates (normally or with an error), the
+     * resulting sequence terminates immediately (normally or with all the errors accumulated till that point).
+     * If that input source is also synchronous, other sources after it will not be subscribed to.
+     * <p>
      * <img width="640" height="380" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/combineLatest.png" alt="">
      * <dl>
      *  <dt><b>Scheduler:</b></dt>
@@ -168,6 +174,10 @@ public abstract class Observable<T> implements ObservableSource<T> {
      * implementation of this operator has to create an {@code Object[]} instead. Unfortunately, a
      * {@code Function<Integer[], R>} passed to the method would trigger a {@code ClassCastException}.
      * <p>
+     * If any of the sources never produces an item but only terminates (normally or with an error), the
+     * resulting sequence terminates immediately (normally or with all the errors accumulated till that point).
+     * If that input source is also synchronous, other sources after it will not be subscribed to.
+     * <p>
      * <img width="640" height="380" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/combineLatest.png" alt="">
      * <dl>
      *  <dt><b>Scheduler:</b></dt>
@@ -193,7 +203,6 @@ public abstract class Observable<T> implements ObservableSource<T> {
         return combineLatest(sources, combiner, bufferSize());
     }
 
-
     /**
      * Combines a collection of source ObservableSources by emitting an item that aggregates the latest values of each of
      * the source ObservableSources each time an item is received from any of the source ObservableSources, where this
@@ -202,6 +211,10 @@ public abstract class Observable<T> implements ObservableSource<T> {
      * Note on method signature: since Java doesn't allow creating a generic array with {@code new T[]}, the
      * implementation of this operator has to create an {@code Object[]} instead. Unfortunately, a
      * {@code Function<Integer[], R>} passed to the method would trigger a {@code ClassCastException}.
+     * <p>
+     * If any of the sources never produces an item but only terminates (normally or with an error), the
+     * resulting sequence terminates immediately (normally or with all the errors accumulated till that point).
+     * If that input source is also synchronous, other sources after it will not be subscribed to.
      * <p>
      * <img width="640" height="380" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/combineLatest.png" alt="">
      * <dl>
@@ -245,6 +258,10 @@ public abstract class Observable<T> implements ObservableSource<T> {
      * implementation of this operator has to create an {@code Object[]} instead. Unfortunately, a
      * {@code Function<Integer[], R>} passed to the method would trigger a {@code ClassCastException}.
      * <p>
+     * If any of the sources never produces an item but only terminates (normally or with an error), the
+     * resulting sequence terminates immediately (normally or with all the errors accumulated till that point).
+     * If that input source is also synchronous, other sources after it will not be subscribed to.
+     * <p>
      * <img width="640" height="380" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/combineLatest.png" alt="">
      * <dl>
      *  <dt><b>Scheduler:</b></dt>
@@ -278,6 +295,10 @@ public abstract class Observable<T> implements ObservableSource<T> {
      * Note on method signature: since Java doesn't allow creating a generic array with {@code new T[]}, the
      * implementation of this operator has to create an {@code Object[]} instead. Unfortunately, a
      * {@code Function<Integer[], R>} passed to the method would trigger a {@code ClassCastException}.
+     * <p>
+     * If any of the sources never produces an item but only terminates (normally or with an error), the
+     * resulting sequence terminates immediately (normally or with all the errors accumulated till that point).
+     * If that input source is also synchronous, other sources after it will not be subscribed to.
      * <p>
      * <img width="640" height="380" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/combineLatest.png" alt="">
      * <dl>
@@ -320,6 +341,10 @@ public abstract class Observable<T> implements ObservableSource<T> {
      * source ObservableSources each time an item is received from either of the source ObservableSources, where this
      * aggregation is defined by a specified function.
      * <p>
+     * If any of the sources never produces an item but only terminates (normally or with an error), the
+     * resulting sequence terminates immediately (normally or with all the errors accumulated till that point).
+     * If that input source is also synchronous, other sources after it will not be subscribed to.
+     * <p>
      * <img width="640" height="380" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/combineLatest.png" alt="">
      * <dl>
      *  <dt><b>Scheduler:</b></dt>
@@ -345,6 +370,8 @@ public abstract class Observable<T> implements ObservableSource<T> {
     public static <T1, T2, R> Observable<R> combineLatest(
             ObservableSource<? extends T1> source1, ObservableSource<? extends T2> source2,
             BiFunction<? super T1, ? super T2, ? extends R> combiner) {
+        ObjectHelper.requireNonNull(source1, "source1 is null");
+        ObjectHelper.requireNonNull(source2, "source2 is null");
         return combineLatest(Functions.toFunction(combiner), bufferSize(), source1, source2);
     }
 
@@ -352,6 +379,10 @@ public abstract class Observable<T> implements ObservableSource<T> {
      * Combines three source ObservableSources by emitting an item that aggregates the latest values of each of the
      * source ObservableSources each time an item is received from any of the source ObservableSources, where this
      * aggregation is defined by a specified function.
+     * <p>
+     * If any of the sources never produces an item but only terminates (normally or with an error), the
+     * resulting sequence terminates immediately (normally or with all the errors accumulated till that point).
+     * If that input source is also synchronous, other sources after it will not be subscribed to.
      * <p>
      * <img width="640" height="380" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/combineLatest.png" alt="">
      * <dl>
@@ -382,6 +413,9 @@ public abstract class Observable<T> implements ObservableSource<T> {
             ObservableSource<? extends T1> source1, ObservableSource<? extends T2> source2,
             ObservableSource<? extends T3> source3,
             Function3<? super T1, ? super T2, ? super T3, ? extends R> combiner) {
+        ObjectHelper.requireNonNull(source1, "source1 is null");
+        ObjectHelper.requireNonNull(source2, "source2 is null");
+        ObjectHelper.requireNonNull(source3, "source3 is null");
         return combineLatest(Functions.toFunction(combiner), bufferSize(), source1, source2, source3);
     }
 
@@ -389,6 +423,10 @@ public abstract class Observable<T> implements ObservableSource<T> {
      * Combines four source ObservableSources by emitting an item that aggregates the latest values of each of the
      * source ObservableSources each time an item is received from any of the source ObservableSources, where this
      * aggregation is defined by a specified function.
+     * <p>
+     * If any of the sources never produces an item but only terminates (normally or with an error), the
+     * resulting sequence terminates immediately (normally or with all the errors accumulated till that point).
+     * If that input source is also synchronous, other sources after it will not be subscribed to.
      * <p>
      * <img width="640" height="380" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/combineLatest.png" alt="">
      * <dl>
@@ -422,6 +460,10 @@ public abstract class Observable<T> implements ObservableSource<T> {
             ObservableSource<? extends T1> source1, ObservableSource<? extends T2> source2,
             ObservableSource<? extends T3> source3, ObservableSource<? extends T4> source4,
             Function4<? super T1, ? super T2, ? super T3, ? super T4, ? extends R> combiner) {
+        ObjectHelper.requireNonNull(source1, "source1 is null");
+        ObjectHelper.requireNonNull(source2, "source2 is null");
+        ObjectHelper.requireNonNull(source3, "source3 is null");
+        ObjectHelper.requireNonNull(source4, "source4 is null");
         return combineLatest(Functions.toFunction(combiner), bufferSize(), source1, source2, source3, source4);
     }
 
@@ -429,6 +471,10 @@ public abstract class Observable<T> implements ObservableSource<T> {
      * Combines five source ObservableSources by emitting an item that aggregates the latest values of each of the
      * source ObservableSources each time an item is received from any of the source ObservableSources, where this
      * aggregation is defined by a specified function.
+     * <p>
+     * If any of the sources never produces an item but only terminates (normally or with an error), the
+     * resulting sequence terminates immediately (normally or with all the errors accumulated till that point).
+     * If that input source is also synchronous, other sources after it will not be subscribed to.
      * <p>
      * <img width="640" height="380" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/combineLatest.png" alt="">
      * <dl>
@@ -466,6 +512,11 @@ public abstract class Observable<T> implements ObservableSource<T> {
             ObservableSource<? extends T3> source3, ObservableSource<? extends T4> source4,
             ObservableSource<? extends T5> source5,
             Function5<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? extends R> combiner) {
+        ObjectHelper.requireNonNull(source1, "source1 is null");
+        ObjectHelper.requireNonNull(source2, "source2 is null");
+        ObjectHelper.requireNonNull(source3, "source3 is null");
+        ObjectHelper.requireNonNull(source4, "source4 is null");
+        ObjectHelper.requireNonNull(source5, "source5 is null");
         return combineLatest(Functions.toFunction(combiner), bufferSize(), source1, source2, source3, source4, source5);
     }
 
@@ -473,6 +524,10 @@ public abstract class Observable<T> implements ObservableSource<T> {
      * Combines six source ObservableSources by emitting an item that aggregates the latest values of each of the
      * source ObservableSources each time an item is received from any of the source ObservableSources, where this
      * aggregation is defined by a specified function.
+     * <p>
+     * If any of the sources never produces an item but only terminates (normally or with an error), the
+     * resulting sequence terminates immediately (normally or with all the errors accumulated till that point).
+     * If that input source is also synchronous, other sources after it will not be subscribed to.
      * <p>
      * <img width="640" height="380" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/combineLatest.png" alt="">
      * <dl>
@@ -513,6 +568,12 @@ public abstract class Observable<T> implements ObservableSource<T> {
             ObservableSource<? extends T3> source3, ObservableSource<? extends T4> source4,
             ObservableSource<? extends T5> source5, ObservableSource<? extends T6> source6,
             Function6<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? extends R> combiner) {
+        ObjectHelper.requireNonNull(source1, "source1 is null");
+        ObjectHelper.requireNonNull(source2, "source2 is null");
+        ObjectHelper.requireNonNull(source3, "source3 is null");
+        ObjectHelper.requireNonNull(source4, "source4 is null");
+        ObjectHelper.requireNonNull(source5, "source5 is null");
+        ObjectHelper.requireNonNull(source6, "source6 is null");
         return combineLatest(Functions.toFunction(combiner), bufferSize(), source1, source2, source3, source4, source5, source6);
     }
 
@@ -520,6 +581,10 @@ public abstract class Observable<T> implements ObservableSource<T> {
      * Combines seven source ObservableSources by emitting an item that aggregates the latest values of each of the
      * source ObservableSources each time an item is received from any of the source ObservableSources, where this
      * aggregation is defined by a specified function.
+     * <p>
+     * If any of the sources never produces an item but only terminates (normally or with an error), the
+     * resulting sequence terminates immediately (normally or with all the errors accumulated till that point).
+     * If that input source is also synchronous, other sources after it will not be subscribed to.
      * <p>
      * <img width="640" height="380" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/combineLatest.png" alt="">
      * <dl>
@@ -564,6 +629,13 @@ public abstract class Observable<T> implements ObservableSource<T> {
             ObservableSource<? extends T5> source5, ObservableSource<? extends T6> source6,
             ObservableSource<? extends T7> source7,
             Function7<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? super T7, ? extends R> combiner) {
+        ObjectHelper.requireNonNull(source1, "source1 is null");
+        ObjectHelper.requireNonNull(source2, "source2 is null");
+        ObjectHelper.requireNonNull(source3, "source3 is null");
+        ObjectHelper.requireNonNull(source4, "source4 is null");
+        ObjectHelper.requireNonNull(source5, "source5 is null");
+        ObjectHelper.requireNonNull(source6, "source6 is null");
+        ObjectHelper.requireNonNull(source7, "source7 is null");
         return combineLatest(Functions.toFunction(combiner), bufferSize(), source1, source2, source3, source4, source5, source6, source7);
     }
 
@@ -571,6 +643,10 @@ public abstract class Observable<T> implements ObservableSource<T> {
      * Combines eight source ObservableSources by emitting an item that aggregates the latest values of each of the
      * source ObservableSources each time an item is received from any of the source ObservableSources, where this
      * aggregation is defined by a specified function.
+     * <p>
+     * If any of the sources never produces an item but only terminates (normally or with an error), the
+     * resulting sequence terminates immediately (normally or with all the errors accumulated till that point).
+     * If that input source is also synchronous, other sources after it will not be subscribed to.
      * <p>
      * <img width="640" height="380" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/combineLatest.png" alt="">
      * <dl>
@@ -618,6 +694,14 @@ public abstract class Observable<T> implements ObservableSource<T> {
             ObservableSource<? extends T5> source5, ObservableSource<? extends T6> source6,
             ObservableSource<? extends T7> source7, ObservableSource<? extends T8> source8,
             Function8<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? super T7, ? super T8, ? extends R> combiner) {
+        ObjectHelper.requireNonNull(source1, "source1 is null");
+        ObjectHelper.requireNonNull(source2, "source2 is null");
+        ObjectHelper.requireNonNull(source3, "source3 is null");
+        ObjectHelper.requireNonNull(source4, "source4 is null");
+        ObjectHelper.requireNonNull(source5, "source5 is null");
+        ObjectHelper.requireNonNull(source6, "source6 is null");
+        ObjectHelper.requireNonNull(source7, "source7 is null");
+        ObjectHelper.requireNonNull(source8, "source8 is null");
         return combineLatest(Functions.toFunction(combiner), bufferSize(), source1, source2, source3, source4, source5, source6, source7, source8);
     }
 
@@ -625,6 +709,10 @@ public abstract class Observable<T> implements ObservableSource<T> {
      * Combines nine source ObservableSources by emitting an item that aggregates the latest values of each of the
      * source ObservableSources each time an item is received from any of the source ObservableSources, where this
      * aggregation is defined by a specified function.
+     * <p>
+     * If any of the sources never produces an item but only terminates (normally or with an error), the
+     * resulting sequence terminates immediately (normally or with all the errors accumulated till that point).
+     * If that input source is also synchronous, other sources after it will not be subscribed to.
      * <p>
      * <img width="640" height="380" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/combineLatest.png" alt="">
      * <dl>
@@ -676,6 +764,15 @@ public abstract class Observable<T> implements ObservableSource<T> {
             ObservableSource<? extends T7> source7, ObservableSource<? extends T8> source8,
             ObservableSource<? extends T9> source9,
             Function9<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? super T7, ? super T8, ? super T9, ? extends R> combiner) {
+        ObjectHelper.requireNonNull(source1, "source1 is null");
+        ObjectHelper.requireNonNull(source2, "source2 is null");
+        ObjectHelper.requireNonNull(source3, "source3 is null");
+        ObjectHelper.requireNonNull(source4, "source4 is null");
+        ObjectHelper.requireNonNull(source5, "source5 is null");
+        ObjectHelper.requireNonNull(source6, "source6 is null");
+        ObjectHelper.requireNonNull(source7, "source7 is null");
+        ObjectHelper.requireNonNull(source8, "source8 is null");
+        ObjectHelper.requireNonNull(source9, "source9 is null");
         return combineLatest(Functions.toFunction(combiner), bufferSize(), source1, source2, source3, source4, source5, source6, source7, source8, source9);
     }
 
@@ -687,6 +784,10 @@ public abstract class Observable<T> implements ObservableSource<T> {
      * Note on method signature: since Java doesn't allow creating a generic array with {@code new T[]}, the
      * implementation of this operator has to create an {@code Object[]} instead. Unfortunately, a
      * {@code Function<Integer[], R>} passed to the method would trigger a {@code ClassCastException}.
+     * <p>
+     * If any of the sources never produces an item but only terminates (normally or with an error), the
+     * resulting sequence terminates immediately (normally or with all the errors accumulated till that point).
+     * If that input source is also synchronous, other sources after it will not be subscribed to.
      *
      * <dl>
      *  <dt><b>Scheduler:</b></dt>
@@ -721,6 +822,10 @@ public abstract class Observable<T> implements ObservableSource<T> {
      * Note on method signature: since Java doesn't allow creating a generic array with {@code new T[]}, the
      * implementation of this operator has to create an {@code Object[]} instead. Unfortunately, a
      * {@code Function<Integer[], R>} passed to the method would trigger a {@code ClassCastException}.
+     * <p>
+     * If any of the sources never produces an item but only terminates (normally or with an error), the
+     * resulting sequence terminates immediately (normally or with all the errors accumulated till that point).
+     * If that input source is also synchronous, other sources after it will not be subscribed to.
      *
      * <dl>
      *  <dt><b>Scheduler:</b></dt>
@@ -757,6 +862,10 @@ public abstract class Observable<T> implements ObservableSource<T> {
      * Note on method signature: since Java doesn't allow creating a generic array with {@code new T[]}, the
      * implementation of this operator has to create an {@code Object[]} instead. Unfortunately, a
      * {@code Function<Integer[], R>} passed to the method would trigger a {@code ClassCastException}.
+     * <p>
+     * If any of the sources never produces an item but only terminates (normally or with an error), the
+     * resulting sequence terminates immediately (normally or with all the errors accumulated till that point).
+     * If that input source is also synchronous, other sources after it will not be subscribed to.
      * <p>
      * <img width="640" height="380" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/combineLatestDelayError.png" alt="">
      * <dl>
@@ -802,6 +911,10 @@ public abstract class Observable<T> implements ObservableSource<T> {
      * implementation of this operator has to create an {@code Object[]} instead. Unfortunately, a
      * {@code Function<Integer[], R>} passed to the method would trigger a {@code ClassCastException}.
      * <p>
+     * If any of the sources never produces an item but only terminates (normally or with an error), the
+     * resulting sequence terminates immediately (normally or with all the errors accumulated till that point).
+     * If that input source is also synchronous, other sources after it will not be subscribed to.
+     * <p>
      * <img width="640" height="380" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/combineLatestDelayError.png" alt="">
      * <dl>
      *  <dt><b>Scheduler:</b></dt>
@@ -836,6 +949,10 @@ public abstract class Observable<T> implements ObservableSource<T> {
      * Note on method signature: since Java doesn't allow creating a generic array with {@code new T[]}, the
      * implementation of this operator has to create an {@code Object[]} instead. Unfortunately, a
      * {@code Function<Integer[], R>} passed to the method would trigger a {@code ClassCastException}.
+     * <p>
+     * If any of the sources never produces an item but only terminates (normally or with an error), the
+     * resulting sequence terminates immediately (normally or with all the errors accumulated till that point).
+     * If that input source is also synchronous, other sources after it will not be subscribed to.
      * <p>
      * <img width="640" height="380" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/combineLatestDelayError.png" alt="">
      * <dl>
@@ -938,6 +1055,7 @@ public abstract class Observable<T> implements ObservableSource<T> {
     @SchedulerSupport(SchedulerSupport.NONE)
     public static <T> Observable<T> concat(ObservableSource<? extends ObservableSource<? extends T>> sources, int prefetch) {
         ObjectHelper.requireNonNull(sources, "sources is null");
+        ObjectHelper.verifyPositive(prefetch, "prefetch");
         return RxJavaPlugins.onAssembly(new ObservableConcatMap(sources, Functions.identity(), prefetch, ErrorMode.IMMEDIATE));
     }
 
@@ -964,6 +1082,8 @@ public abstract class Observable<T> implements ObservableSource<T> {
     @CheckReturnValue
     @SchedulerSupport(SchedulerSupport.NONE)
     public static <T> Observable<T> concat(ObservableSource<? extends T> source1, ObservableSource<? extends T> source2) {
+        ObjectHelper.requireNonNull(source1, "source1 is null");
+        ObjectHelper.requireNonNull(source2, "source2 is null");
         return concatArray(source1, source2);
     }
 
@@ -994,6 +1114,9 @@ public abstract class Observable<T> implements ObservableSource<T> {
     public static <T> Observable<T> concat(
             ObservableSource<? extends T> source1, ObservableSource<? extends T> source2,
             ObservableSource<? extends T> source3) {
+        ObjectHelper.requireNonNull(source1, "source1 is null");
+        ObjectHelper.requireNonNull(source2, "source2 is null");
+        ObjectHelper.requireNonNull(source3, "source3 is null");
         return concatArray(source1, source2, source3);
     }
 
@@ -1026,6 +1149,10 @@ public abstract class Observable<T> implements ObservableSource<T> {
     public static <T> Observable<T> concat(
             ObservableSource<? extends T> source1, ObservableSource<? extends T> source2,
             ObservableSource<? extends T> source3, ObservableSource<? extends T> source4) {
+        ObjectHelper.requireNonNull(source1, "source1 is null");
+        ObjectHelper.requireNonNull(source2, "source2 is null");
+        ObjectHelper.requireNonNull(source3, "source3 is null");
+        ObjectHelper.requireNonNull(source4, "source4 is null");
         return concatArray(source1, source2, source3, source4);
     }
 
@@ -1194,6 +1321,8 @@ public abstract class Observable<T> implements ObservableSource<T> {
     @CheckReturnValue
     @SchedulerSupport(SchedulerSupport.NONE)
     public static <T> Observable<T> concatDelayError(ObservableSource<? extends ObservableSource<? extends T>> sources, int prefetch, boolean tillTheEnd) {
+        ObjectHelper.requireNonNull(sources, "sources is null");
+        ObjectHelper.verifyPositive(prefetch, "prefetch is null");
         return RxJavaPlugins.onAssembly(new ObservableConcatMap(sources, Functions.identity(), prefetch, tillTheEnd ? ErrorMode.END : ErrorMode.BOUNDARY));
     }
 
@@ -1244,6 +1373,8 @@ public abstract class Observable<T> implements ObservableSource<T> {
     @CheckReturnValue
     @SchedulerSupport(SchedulerSupport.NONE)
     public static <T> Observable<T> concatEager(ObservableSource<? extends ObservableSource<? extends T>> sources, int maxConcurrency, int prefetch) {
+        ObjectHelper.requireNonNull(maxConcurrency, "maxConcurrency is null");
+        ObjectHelper.requireNonNull(prefetch, "prefetch is null");
         return wrap(sources).concatMapEager((Function)Functions.identity(), maxConcurrency, prefetch);
     }
 
@@ -1294,6 +1425,8 @@ public abstract class Observable<T> implements ObservableSource<T> {
     @CheckReturnValue
     @SchedulerSupport(SchedulerSupport.NONE)
     public static <T> Observable<T> concatEager(Iterable<? extends ObservableSource<? extends T>> sources, int maxConcurrency, int prefetch) {
+        ObjectHelper.requireNonNull(maxConcurrency, "maxConcurrency is null");
+        ObjectHelper.requireNonNull(prefetch, "prefetch is null");
         return fromIterable(sources).concatMapEagerDelayError((Function)Functions.identity(), maxConcurrency, prefetch, false);
     }
 
@@ -1485,7 +1618,7 @@ public abstract class Observable<T> implements ObservableSource<T> {
      * Returns an Observable that, when an observer subscribes to it, invokes a function you specify and then
      * emits the value returned from that function.
      * <p>
-     * <img width="640" height="195" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/fromCallable.png" alt="">
+     * <img width="640" height="310" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/fromCallable.png" alt="">
      * <p>
      * This allows you to defer the execution of the function you specify until an observer subscribes to the
      * ObservableSource. That is to say, it makes the function "lazy."
@@ -1519,7 +1652,7 @@ public abstract class Observable<T> implements ObservableSource<T> {
      * return value of the {@link Future#get} method of that object, by passing the object into the {@code from}
      * method.
      * <p>
-     * <em>Important note:</em> This ObservableSource is blocking; you cannot unsubscribe from it.
+     * <em>Important note:</em> This ObservableSource is blocking; you cannot dispose it.
      * <p>
      * Unlike 1.x, cancelling the Observable won't cancel the future. If necessary, one can use composition to achieve the
      * cancellation effect: {@code futureObservableSource.doOnCancel(() -> future.cancel(true));}.
@@ -1555,7 +1688,7 @@ public abstract class Observable<T> implements ObservableSource<T> {
      * Unlike 1.x, cancelling the Observable won't cancel the future. If necessary, one can use composition to achieve the
      * cancellation effect: {@code futureObservableSource.doOnCancel(() -> future.cancel(true));}.
      * <p>
-     * <em>Important note:</em> This ObservableSource is blocking; you cannot unsubscribe from it.
+     * <em>Important note:</em> This ObservableSource is blocking; you cannot dispose it.
      * <dl>
      *  <dt><b>Scheduler:</b></dt>
      *  <dd>{@code fromFuture} does not operate by default on a particular {@link Scheduler}.</dd>
@@ -1593,7 +1726,7 @@ public abstract class Observable<T> implements ObservableSource<T> {
      * Unlike 1.x, cancelling the Observable won't cancel the future. If necessary, one can use composition to achieve the
      * cancellation effect: {@code futureObservableSource.doOnCancel(() -> future.cancel(true));}.
      * <p>
-     * <em>Important note:</em> This ObservableSource is blocking; you cannot unsubscribe from it.
+     * <em>Important note:</em> This ObservableSource is blocking; you cannot dispose it.
      * <dl>
      *  <dt><b>Scheduler:</b></dt>
      *  <dd>{@code fromFuture} does not operate by default on a particular {@link Scheduler}.</dd>
@@ -2543,6 +2676,7 @@ public abstract class Observable<T> implements ObservableSource<T> {
     @SchedulerSupport(SchedulerSupport.NONE)
     @SuppressWarnings({ "unchecked", "rawtypes" })
     public static <T> Observable<T> merge(ObservableSource<? extends ObservableSource<? extends T>> sources) {
+        ObjectHelper.requireNonNull(sources, "sources is null");
         return RxJavaPlugins.onAssembly(new ObservableFlatMap(sources, Functions.identity(), false, Integer.MAX_VALUE, bufferSize()));
     }
 
@@ -2576,6 +2710,8 @@ public abstract class Observable<T> implements ObservableSource<T> {
     @CheckReturnValue
     @SchedulerSupport(SchedulerSupport.NONE)
     public static <T> Observable<T> merge(ObservableSource<? extends ObservableSource<? extends T>> sources, int maxConcurrency) {
+        ObjectHelper.requireNonNull(sources, "sources is null");
+        ObjectHelper.verifyPositive(maxConcurrency, "maxConcurrency");
         return RxJavaPlugins.onAssembly(new ObservableFlatMap(sources, Functions.identity(), false, maxConcurrency, bufferSize()));
     }
 
@@ -2869,6 +3005,7 @@ public abstract class Observable<T> implements ObservableSource<T> {
     @SchedulerSupport(SchedulerSupport.NONE)
     @SuppressWarnings({ "unchecked", "rawtypes" })
     public static <T> Observable<T> mergeDelayError(ObservableSource<? extends ObservableSource<? extends T>> sources) {
+        ObjectHelper.requireNonNull(sources, "sources is null");
         return RxJavaPlugins.onAssembly(new ObservableFlatMap(sources, Functions.identity(), true, Integer.MAX_VALUE, bufferSize()));
     }
 
@@ -2905,6 +3042,8 @@ public abstract class Observable<T> implements ObservableSource<T> {
     @CheckReturnValue
     @SchedulerSupport(SchedulerSupport.NONE)
     public static <T> Observable<T> mergeDelayError(ObservableSource<? extends ObservableSource<? extends T>> sources, int maxConcurrency) {
+        ObjectHelper.requireNonNull(sources, "sources is null");
+        ObjectHelper.verifyPositive(maxConcurrency, "maxConcurrency");
         return RxJavaPlugins.onAssembly(new ObservableFlatMap(sources, Functions.identity(), true, maxConcurrency, bufferSize()));
     }
 
@@ -3291,7 +3430,7 @@ public abstract class Observable<T> implements ObservableSource<T> {
      * from the earlier-emitted ObservableSource and begins emitting items from the new one.
      * <p>
      * The resulting ObservableSource completes if both the outer ObservableSource and the last inner ObservableSource, if any, complete.
-     * If the outer ObservableSource signals an onError, the inner ObservableSource is unsubscribed and the error delivered in-sequence.
+     * If the outer ObservableSource signals an onError, the inner ObservableSource is disposed and the error delivered in-sequence.
      * <dl>
      *  <dt><b>Scheduler:</b></dt>
      *  <dd>{@code switchOnNext} does not operate by default on a particular {@link Scheduler}.</dd>
@@ -3311,6 +3450,7 @@ public abstract class Observable<T> implements ObservableSource<T> {
     @SchedulerSupport(SchedulerSupport.NONE)
     public static <T> Observable<T> switchOnNext(ObservableSource<? extends ObservableSource<? extends T>> sources, int bufferSize) {
         ObjectHelper.requireNonNull(sources, "sources is null");
+        ObjectHelper.verifyPositive(bufferSize, "bufferSize");
         return RxJavaPlugins.onAssembly(new ObservableSwitchMap(sources, Functions.identity(), bufferSize, false));
     }
 
@@ -3326,7 +3466,7 @@ public abstract class Observable<T> implements ObservableSource<T> {
      * from the earlier-emitted ObservableSource and begins emitting items from the new one.
      * <p>
      * The resulting ObservableSource completes if both the outer ObservableSource and the last inner ObservableSource, if any, complete.
-     * If the outer ObservableSource signals an onError, the inner ObservableSource is unsubscribed and the error delivered in-sequence.
+     * If the outer ObservableSource signals an onError, the inner ObservableSource is disposed and the error delivered in-sequence.
      * <dl>
      *  <dt><b>Scheduler:</b></dt>
      *  <dd>{@code switchOnNext} does not operate by default on a particular {@link Scheduler}.</dd>
@@ -3454,6 +3594,9 @@ public abstract class Observable<T> implements ObservableSource<T> {
      *            time units to use for {@code delay}
      * @param scheduler
      *            the {@link Scheduler} to use for scheduling the item
+     * @throws NullPointerException
+     *             if {@code unit} is null, or
+     *             if {@code scheduler} is null
      * @return an Observable that emits {@code 0L} after a specified delay, on a specified Scheduler, and then
      *         completes
      * @see <a href="http://reactivex.io/documentation/operators/timer.html">ReactiveX operators documentation: Timer</a>
@@ -3590,11 +3733,11 @@ public abstract class Observable<T> implements ObservableSource<T> {
      * the number of {@code onNext} invocations of the source ObservableSource that emits the fewest items.
      * <p>
      * The operator subscribes to its sources in order they are specified and completes eagerly if
-     * one of the sources is shorter than the rest while unsubscribing the other sources. Therefore, it
+     * one of the sources is shorter than the rest while disposing the other sources. Therefore, it
      * is possible those other sources will never be able to run to completion (and thus not calling
      * {@code doOnComplete()}). This can also happen if the sources are exactly the same length; if
      * source A completes and B has been consumed and is about to complete, the operator detects A won't
-     * be sending further values and it will unsubscribe B immediately. For example:
+     * be sending further values and it will dispose B immediately. For example:
      * <pre><code>zip(Arrays.asList(range(1, 5).doOnComplete(action1), range(6, 5).doOnComplete(action2)), (a) -&gt; a)</code></pre>
      * {@code action1} will be called but {@code action2} won't.
      * <br>To work around this termination property,
@@ -3643,11 +3786,11 @@ public abstract class Observable<T> implements ObservableSource<T> {
      * the number of {@code onNext} invocations of the source ObservableSource that emits the fewest items.
      * <p>
      * The operator subscribes to its sources in order they are specified and completes eagerly if
-     * one of the sources is shorter than the rest while unsubscribing the other sources. Therefore, it
+     * one of the sources is shorter than the rest while disposing the other sources. Therefore, it
      * is possible those other sources will never be able to run to completion (and thus not calling
      * {@code doOnComplete()}). This can also happen if the sources are exactly the same length; if
      * source A completes and B has been consumed and is about to complete, the operator detects A won't
-     * be sending further values and it will unsubscribe B immediately. For example:
+     * be sending further values and it will dispose B immediately. For example:
      * <pre><code>zip(just(range(1, 5).doOnComplete(action1), range(6, 5).doOnComplete(action2)), (a) -&gt; a)</code></pre>
      * {@code action1} will be called but {@code action2} won't.
      * <br>To work around this termination property,
@@ -3701,11 +3844,11 @@ public abstract class Observable<T> implements ObservableSource<T> {
      * items.
      * <p>
      * The operator subscribes to its sources in order they are specified and completes eagerly if
-     * one of the sources is shorter than the rest while unsubscribing the other sources. Therefore, it
+     * one of the sources is shorter than the rest while disposing the other sources. Therefore, it
      * is possible those other sources will never be able to run to completion (and thus not calling
      * {@code doOnComplete()}). This can also happen if the sources are exactly the same length; if
      * source A completes and B has been consumed and is about to complete, the operator detects A won't
-     * be sending further values and it will unsubscribe B immediately. For example:
+     * be sending further values and it will dispose B immediately. For example:
      * <pre><code>zip(range(1, 5).doOnComplete(action1), range(6, 5).doOnComplete(action2), (a, b) -&gt; a + b)</code></pre>
      * {@code action1} will be called but {@code action2} won't.
      * <br>To work around this termination property,
@@ -3735,6 +3878,8 @@ public abstract class Observable<T> implements ObservableSource<T> {
     public static <T1, T2, R> Observable<R> zip(
             ObservableSource<? extends T1> source1, ObservableSource<? extends T2> source2,
             BiFunction<? super T1, ? super T2, ? extends R> zipper) {
+        ObjectHelper.requireNonNull(source1, "source1 is null");
+        ObjectHelper.requireNonNull(source2, "source2 is null");
         return zipArray(Functions.toFunction(zipper), false, bufferSize(), source1, source2);
     }
 
@@ -3754,11 +3899,11 @@ public abstract class Observable<T> implements ObservableSource<T> {
      * items.
      * <p>
      * The operator subscribes to its sources in order they are specified and completes eagerly if
-     * one of the sources is shorter than the rest while unsubscribing the other sources. Therefore, it
+     * one of the sources is shorter than the rest while disposing the other sources. Therefore, it
      * is possible those other sources will never be able to run to completion (and thus not calling
      * {@code doOnComplete()}). This can also happen if the sources are exactly the same length; if
      * source A completes and B has been consumed and is about to complete, the operator detects A won't
-     * be sending further values and it will unsubscribe B immediately. For example:
+     * be sending further values and it will dispose B immediately. For example:
      * <pre><code>zip(range(1, 5).doOnComplete(action1), range(6, 5).doOnComplete(action2), (a, b) -&gt; a + b)</code></pre>
      * {@code action1} will be called but {@code action2} won't.
      * <br>To work around this termination property,
@@ -3789,6 +3934,8 @@ public abstract class Observable<T> implements ObservableSource<T> {
     public static <T1, T2, R> Observable<R> zip(
             ObservableSource<? extends T1> source1, ObservableSource<? extends T2> source2,
             BiFunction<? super T1, ? super T2, ? extends R> zipper, boolean delayError) {
+        ObjectHelper.requireNonNull(source1, "source1 is null");
+        ObjectHelper.requireNonNull(source2, "source2 is null");
         return zipArray(Functions.toFunction(zipper), delayError, bufferSize(), source1, source2);
     }
 
@@ -3808,11 +3955,11 @@ public abstract class Observable<T> implements ObservableSource<T> {
      * items.
      * <p>
      * The operator subscribes to its sources in order they are specified and completes eagerly if
-     * one of the sources is shorter than the rest while unsubscribing the other sources. Therefore, it
+     * one of the sources is shorter than the rest while disposing the other sources. Therefore, it
      * is possible those other sources will never be able to run to completion (and thus not calling
      * {@code doOnComplete()}). This can also happen if the sources are exactly the same length; if
      * source A completes and B has been consumed and is about to complete, the operator detects A won't
-     * be sending further values and it will unsubscribe B immediately. For example:
+     * be sending further values and it will dispose B immediately. For example:
      * <pre><code>zip(range(1, 5).doOnComplete(action1), range(6, 5).doOnComplete(action2), (a, b) -&gt; a + b)</code></pre>
      * {@code action1} will be called but {@code action2} won't.
      * <br>To work around this termination property,
@@ -3844,6 +3991,8 @@ public abstract class Observable<T> implements ObservableSource<T> {
     public static <T1, T2, R> Observable<R> zip(
             ObservableSource<? extends T1> source1, ObservableSource<? extends T2> source2,
             BiFunction<? super T1, ? super T2, ? extends R> zipper, boolean delayError, int bufferSize) {
+        ObjectHelper.requireNonNull(source1, "source1 is null");
+        ObjectHelper.requireNonNull(source2, "source2 is null");
         return zipArray(Functions.toFunction(zipper), delayError, bufferSize, source1, source2);
     }
 
@@ -3864,11 +4013,11 @@ public abstract class Observable<T> implements ObservableSource<T> {
      * items.
      * <p>
      * The operator subscribes to its sources in order they are specified and completes eagerly if
-     * one of the sources is shorter than the rest while unsubscribing the other sources. Therefore, it
+     * one of the sources is shorter than the rest while disposing the other sources. Therefore, it
      * is possible those other sources will never be able to run to completion (and thus not calling
      * {@code doOnComplete()}). This can also happen if the sources are exactly the same length; if
      * source A completes and B has been consumed and is about to complete, the operator detects A won't
-     * be sending further values and it will unsubscribe B immediately. For example:
+     * be sending further values and it will dispose B immediately. For example:
      * <pre><code>zip(range(1, 5).doOnComplete(action1), range(6, 5).doOnComplete(action2), ..., (a, b, c) -&gt; a + b)</code></pre>
      * {@code action1} will be called but {@code action2} won't.
      * <br>To work around this termination property,
@@ -3901,6 +4050,9 @@ public abstract class Observable<T> implements ObservableSource<T> {
     public static <T1, T2, T3, R> Observable<R> zip(
             ObservableSource<? extends T1> source1, ObservableSource<? extends T2> source2, ObservableSource<? extends T3> source3,
             Function3<? super T1, ? super T2, ? super T3, ? extends R> zipper) {
+        ObjectHelper.requireNonNull(source1, "source1 is null");
+        ObjectHelper.requireNonNull(source2, "source2 is null");
+        ObjectHelper.requireNonNull(source3, "source3 is null");
         return zipArray(Functions.toFunction(zipper), false, bufferSize(), source1, source2, source3);
     }
 
@@ -3921,11 +4073,11 @@ public abstract class Observable<T> implements ObservableSource<T> {
      * items.
      * <p>
      * The operator subscribes to its sources in order they are specified and completes eagerly if
-     * one of the sources is shorter than the rest while unsubscribing the other sources. Therefore, it
+     * one of the sources is shorter than the rest while disposing the other sources. Therefore, it
      * is possible those other sources will never be able to run to completion (and thus not calling
      * {@code doOnComplete()}). This can also happen if the sources are exactly the same length; if
      * source A completes and B has been consumed and is about to complete, the operator detects A won't
-     * be sending further values and it will unsubscribe B immediately. For example:
+     * be sending further values and it will dispose B immediately. For example:
      * <pre><code>zip(range(1, 5).doOnComplete(action1), range(6, 5).doOnComplete(action2), ..., (a, b, c, d) -&gt; a + b)</code></pre>
      * {@code action1} will be called but {@code action2} won't.
      * <br>To work around this termination property,
@@ -3962,6 +4114,10 @@ public abstract class Observable<T> implements ObservableSource<T> {
             ObservableSource<? extends T1> source1, ObservableSource<? extends T2> source2, ObservableSource<? extends T3> source3,
             ObservableSource<? extends T4> source4,
             Function4<? super T1, ? super T2, ? super T3, ? super T4, ? extends R> zipper) {
+        ObjectHelper.requireNonNull(source1, "source1 is null");
+        ObjectHelper.requireNonNull(source2, "source2 is null");
+        ObjectHelper.requireNonNull(source3, "source3 is null");
+        ObjectHelper.requireNonNull(source4, "source4 is null");
         return zipArray(Functions.toFunction(zipper), false, bufferSize(), source1, source2, source3, source4);
     }
 
@@ -3982,11 +4138,11 @@ public abstract class Observable<T> implements ObservableSource<T> {
      * items.
      * <p>
      * The operator subscribes to its sources in order they are specified and completes eagerly if
-     * one of the sources is shorter than the rest while unsubscribing the other sources. Therefore, it
+     * one of the sources is shorter than the rest while disposing the other sources. Therefore, it
      * is possible those other sources will never be able to run to completion (and thus not calling
      * {@code doOnComplete()}). This can also happen if the sources are exactly the same length; if
      * source A completes and B has been consumed and is about to complete, the operator detects A won't
-     * be sending further values and it will unsubscribe B immediately. For example:
+     * be sending further values and it will dispose B immediately. For example:
      * <pre><code>zip(range(1, 5).doOnComplete(action1), range(6, 5).doOnComplete(action2), ..., (a, b, c, d, e) -&gt; a + b)</code></pre>
      * {@code action1} will be called but {@code action2} won't.
      * <br>To work around this termination property,
@@ -4026,6 +4182,11 @@ public abstract class Observable<T> implements ObservableSource<T> {
             ObservableSource<? extends T1> source1, ObservableSource<? extends T2> source2, ObservableSource<? extends T3> source3,
             ObservableSource<? extends T4> source4, ObservableSource<? extends T5> source5,
             Function5<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? extends R> zipper) {
+        ObjectHelper.requireNonNull(source1, "source1 is null");
+        ObjectHelper.requireNonNull(source2, "source2 is null");
+        ObjectHelper.requireNonNull(source3, "source3 is null");
+        ObjectHelper.requireNonNull(source4, "source4 is null");
+        ObjectHelper.requireNonNull(source5, "source5 is null");
         return zipArray(Functions.toFunction(zipper), false, bufferSize(), source1, source2, source3, source4, source5);
     }
 
@@ -4045,11 +4206,11 @@ public abstract class Observable<T> implements ObservableSource<T> {
      * items.
      * <p>
      * The operator subscribes to its sources in order they are specified and completes eagerly if
-     * one of the sources is shorter than the rest while unsubscribing the other sources. Therefore, it
+     * one of the sources is shorter than the rest while disposing the other sources. Therefore, it
      * is possible those other sources will never be able to run to completion (and thus not calling
      * {@code doOnComplete()}). This can also happen if the sources are exactly the same length; if
      * source A completes and B has been consumed and is about to complete, the operator detects A won't
-     * be sending further values and it will unsubscribe B immediately. For example:
+     * be sending further values and it will dispose B immediately. For example:
      * <pre><code>zip(range(1, 5).doOnComplete(action1), range(6, 5).doOnComplete(action2), ..., (a, b, c, d, e, f) -&gt; a + b)</code></pre>
      * {@code action1} will be called but {@code action2} won't.
      * <br>To work around this termination property,
@@ -4092,6 +4253,12 @@ public abstract class Observable<T> implements ObservableSource<T> {
             ObservableSource<? extends T1> source1, ObservableSource<? extends T2> source2, ObservableSource<? extends T3> source3,
             ObservableSource<? extends T4> source4, ObservableSource<? extends T5> source5, ObservableSource<? extends T6> source6,
             Function6<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? extends R> zipper) {
+        ObjectHelper.requireNonNull(source1, "source1 is null");
+        ObjectHelper.requireNonNull(source2, "source2 is null");
+        ObjectHelper.requireNonNull(source3, "source3 is null");
+        ObjectHelper.requireNonNull(source4, "source4 is null");
+        ObjectHelper.requireNonNull(source5, "source5 is null");
+        ObjectHelper.requireNonNull(source6, "source6 is null");
         return zipArray(Functions.toFunction(zipper), false, bufferSize(), source1, source2, source3, source4, source5, source6);
     }
 
@@ -4111,11 +4278,11 @@ public abstract class Observable<T> implements ObservableSource<T> {
      * items.
      * <p>
      * The operator subscribes to its sources in order they are specified and completes eagerly if
-     * one of the sources is shorter than the rest while unsubscribing the other sources. Therefore, it
+     * one of the sources is shorter than the rest while disposing the other sources. Therefore, it
      * is possible those other sources will never be able to run to completion (and thus not calling
      * {@code doOnComplete()}). This can also happen if the sources are exactly the same length; if
      * source A completes and B has been consumed and is about to complete, the operator detects A won't
-     * be sending further values and it will unsubscribe B immediately. For example:
+     * be sending further values and it will dispose B immediately. For example:
      * <pre><code>zip(range(1, 5).doOnComplete(action1), range(6, 5).doOnComplete(action2), ..., (a, b, c, d, e, f, g) -&gt; a + b)</code></pre>
      * {@code action1} will be called but {@code action2} won't.
      * <br>To work around this termination property,
@@ -4162,6 +4329,13 @@ public abstract class Observable<T> implements ObservableSource<T> {
             ObservableSource<? extends T4> source4, ObservableSource<? extends T5> source5, ObservableSource<? extends T6> source6,
             ObservableSource<? extends T7> source7,
             Function7<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? super T7, ? extends R> zipper) {
+        ObjectHelper.requireNonNull(source1, "source1 is null");
+        ObjectHelper.requireNonNull(source2, "source2 is null");
+        ObjectHelper.requireNonNull(source3, "source3 is null");
+        ObjectHelper.requireNonNull(source4, "source4 is null");
+        ObjectHelper.requireNonNull(source5, "source5 is null");
+        ObjectHelper.requireNonNull(source6, "source6 is null");
+        ObjectHelper.requireNonNull(source7, "source7 is null");
         return zipArray(Functions.toFunction(zipper), false, bufferSize(), source1, source2, source3, source4, source5, source6, source7);
     }
 
@@ -4181,11 +4355,11 @@ public abstract class Observable<T> implements ObservableSource<T> {
      * items.
      * <p>
      * The operator subscribes to its sources in order they are specified and completes eagerly if
-     * one of the sources is shorter than the rest while unsubscribing the other sources. Therefore, it
+     * one of the sources is shorter than the rest while disposing the other sources. Therefore, it
      * is possible those other sources will never be able to run to completion (and thus not calling
      * {@code doOnComplete()}). This can also happen if the sources are exactly the same length; if
      * source A completes and B has been consumed and is about to complete, the operator detects A won't
-     * be sending further values and it will unsubscribe B immediately. For example:
+     * be sending further values and it will dispose B immediately. For example:
      * <pre><code>zip(range(1, 5).doOnComplete(action1), range(6, 5).doOnComplete(action2), ..., (a, b, c, d, e, f, g, h) -&gt; a + b)</code></pre>
      * {@code action1} will be called but {@code action2} won't.
      * <br>To work around this termination property,
@@ -4235,6 +4409,14 @@ public abstract class Observable<T> implements ObservableSource<T> {
             ObservableSource<? extends T4> source4, ObservableSource<? extends T5> source5, ObservableSource<? extends T6> source6,
             ObservableSource<? extends T7> source7, ObservableSource<? extends T8> source8,
             Function8<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? super T7, ? super T8, ? extends R> zipper) {
+        ObjectHelper.requireNonNull(source1, "source1 is null");
+        ObjectHelper.requireNonNull(source2, "source2 is null");
+        ObjectHelper.requireNonNull(source3, "source3 is null");
+        ObjectHelper.requireNonNull(source4, "source4 is null");
+        ObjectHelper.requireNonNull(source5, "source5 is null");
+        ObjectHelper.requireNonNull(source6, "source6 is null");
+        ObjectHelper.requireNonNull(source7, "source7 is null");
+        ObjectHelper.requireNonNull(source8, "source8 is null");
         return zipArray(Functions.toFunction(zipper), false, bufferSize(), source1, source2, source3, source4, source5, source6, source7, source8);
     }
 
@@ -4254,11 +4436,11 @@ public abstract class Observable<T> implements ObservableSource<T> {
      * items.
      * <p>
      * The operator subscribes to its sources in order they are specified and completes eagerly if
-     * one of the sources is shorter than the rest while unsubscribing the other sources. Therefore, it
+     * one of the sources is shorter than the rest while disposing the other sources. Therefore, it
      * is possible those other sources will never be able to run to completion (and thus not calling
      * {@code doOnComplete()}). This can also happen if the sources are exactly the same length; if
      * source A completes and B has been consumed and is about to complete, the operator detects A won't
-     * be sending further values and it will unsubscribe B immediately. For example:
+     * be sending further values and it will dispose B immediately. For example:
      * <pre><code>zip(range(1, 5).doOnComplete(action1), range(6, 5).doOnComplete(action2), ..., (a, b, c, d, e, f, g, h, i) -&gt; a + b)</code></pre>
      * {@code action1} will be called but {@code action2} won't.
      * <br>To work around this termination property,
@@ -4311,6 +4493,15 @@ public abstract class Observable<T> implements ObservableSource<T> {
             ObservableSource<? extends T4> source4, ObservableSource<? extends T5> source5, ObservableSource<? extends T6> source6,
             ObservableSource<? extends T7> source7, ObservableSource<? extends T8> source8, ObservableSource<? extends T9> source9,
             Function9<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? super T7, ? super T8, ? super T9, ? extends R> zipper) {
+        ObjectHelper.requireNonNull(source1, "source1 is null");
+        ObjectHelper.requireNonNull(source2, "source2 is null");
+        ObjectHelper.requireNonNull(source3, "source3 is null");
+        ObjectHelper.requireNonNull(source4, "source4 is null");
+        ObjectHelper.requireNonNull(source5, "source5 is null");
+        ObjectHelper.requireNonNull(source6, "source6 is null");
+        ObjectHelper.requireNonNull(source7, "source7 is null");
+        ObjectHelper.requireNonNull(source8, "source8 is null");
+        ObjectHelper.requireNonNull(source9, "source9 is null");
         return zipArray(Functions.toFunction(zipper), false, bufferSize(), source1, source2, source3, source4, source5, source6, source7, source8, source9);
     }
 
@@ -4327,11 +4518,11 @@ public abstract class Observable<T> implements ObservableSource<T> {
      * the number of {@code onNext} invocations of the source ObservableSource that emits the fewest items.
      * <p>
      * The operator subscribes to its sources in order they are specified and completes eagerly if
-     * one of the sources is shorter than the rest while unsubscribing the other sources. Therefore, it
+     * one of the sources is shorter than the rest while disposing the other sources. Therefore, it
      * is possible those other sources will never be able to run to completion (and thus not calling
      * {@code doOnComplete()}). This can also happen if the sources are exactly the same length; if
      * source A completes and B has been consumed and is about to complete, the operator detects A won't
-     * be sending further values and it will unsubscribe B immediately. For example:
+     * be sending further values and it will dispose B immediately. For example:
      * <pre><code>zip(new ObservableSource[]{range(1, 5).doOnComplete(action1), range(6, 5).doOnComplete(action2)}, (a) -&gt;
      * a)</code></pre>
      * {@code action1} will be called but {@code action2} won't.
@@ -4389,11 +4580,11 @@ public abstract class Observable<T> implements ObservableSource<T> {
      * the number of {@code onNext} invocations of the source ObservableSource that emits the fewest items.
      * <p>
      * The operator subscribes to its sources in order they are specified and completes eagerly if
-     * one of the sources is shorter than the rest while unsubscribing the other sources. Therefore, it
+     * one of the sources is shorter than the rest while disposing the other sources. Therefore, it
      * is possible those other sources will never be able to run to completion (and thus not calling
      * {@code doOnComplete()}). This can also happen if the sources are exactly the same length; if
      * source A completes and B has been consumed and is about to complete, the operator detects A won't
-     * be sending further values and it will unsubscribe B immediately. For example:
+     * be sending further values and it will dispose B immediately. For example:
      * <pre><code>zip(Arrays.asList(range(1, 5).doOnComplete(action1), range(6, 5).doOnComplete(action2)), (a) -&gt; a)</code></pre>
      * {@code action1} will be called but {@code action2} won't.
      * <br>To work around this termination property,
@@ -4475,7 +4666,8 @@ public abstract class Observable<T> implements ObservableSource<T> {
      * </dl>
      *
      * @param other
-     *            an ObservableSource competing to react first
+     *            an ObservableSource competing to react first. A subscription to this provided source will occur after
+     *            subscribing to the current source.
      * @return an Observable that emits the same sequence as whichever of the source ObservableSources first
      *         emitted an item or sent a termination notification
      * @see <a href="http://reactivex.io/documentation/operators/amb.html">ReactiveX operators documentation: Amb</a>
@@ -4845,6 +5037,10 @@ public abstract class Observable<T> implements ObservableSource<T> {
 
     /**
      * Subscribes to the source and calls the given callbacks <strong>on the current thread</strong>.
+     * <p>
+     * If the Observable emits an error, it is wrapped into an
+     * {@link io.reactivex.exceptions.OnErrorNotImplementedException OnErrorNotImplementedException}
+     * and routed to the RxJavaPlugins.onError handler.
      * <dl>
      *  <dt><b>Scheduler:</b></dt>
      *  <dd>{@code blockingSubscribe} does not operate by default on a particular {@link Scheduler}.</dd>
@@ -4854,7 +5050,7 @@ public abstract class Observable<T> implements ObservableSource<T> {
      */
     @SchedulerSupport(SchedulerSupport.NONE)
     public final void blockingSubscribe(Consumer<? super T> onNext) {
-        ObservableBlockingSubscribe.subscribe(this, onNext, Functions.ERROR_CONSUMER, Functions.EMPTY_ACTION);
+        ObservableBlockingSubscribe.subscribe(this, onNext, Functions.ON_ERROR_MISSING, Functions.EMPTY_ACTION);
     }
 
     /**
@@ -5411,6 +5607,7 @@ public abstract class Observable<T> implements ObservableSource<T> {
     @CheckReturnValue
     @SchedulerSupport(SchedulerSupport.NONE)
     public final <B> Observable<List<T>> buffer(ObservableSource<B> boundary, final int initialCapacity) {
+        ObjectHelper.verifyPositive(initialCapacity, "initialCapacity");
         return buffer(boundary, Functions.<T>createArrayList(initialCapacity));
     }
 
@@ -5514,13 +5711,13 @@ public abstract class Observable<T> implements ObservableSource<T> {
      * <img width="640" height="410" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/cache.png" alt="">
      * <p>
      * This is useful when you want an ObservableSource to cache responses and you can't control the
-     * subscribe/unsubscribe behavior of all the {@link Observer}s.
+     * subscribe/dispose behavior of all the {@link Observer}s.
      * <p>
      * The operator subscribes only when the first downstream subscriber subscribes and maintains
      * a single subscription towards this ObservableSource. In contrast, the operator family of {@link #replay()}
      * that return a {@link ConnectableObservable} require an explicit call to {@link ConnectableObservable#connect()}.
      * <p>
-     * <em>Note:</em> You sacrifice the ability to unsubscribe from the origin when you use the {@code cache}
+     * <em>Note:</em> You sacrifice the ability to dispose the origin when you use the {@code cache}
      * Observer so be careful not to use this Observer on ObservableSources that emit an infinite or very large number
      * of items that will use up memory.
      * A possible workaround is to apply `takeUntil` with a predicate or
@@ -5568,13 +5765,13 @@ public abstract class Observable<T> implements ObservableSource<T> {
      * <img width="640" height="410" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/cache.png" alt="">
      * <p>
      * This is useful when you want an ObservableSource to cache responses and you can't control the
-     * subscribe/unsubscribe behavior of all the {@link Observer}s.
+     * subscribe/dispose behavior of all the {@link Observer}s.
      * <p>
      * The operator subscribes only when the first downstream subscriber subscribes and maintains
      * a single subscription towards this ObservableSource. In contrast, the operator family of {@link #replay()}
      * that return a {@link ConnectableObservable} require an explicit call to {@link ConnectableObservable#connect()}.
      * <p>
-     * <em>Note:</em> You sacrifice the ability to unsubscribe from the origin when you use the {@code cache}
+     * <em>Note:</em> You sacrifice the ability to dispose the origin when you use the {@code cache}
      * Observer so be careful not to use this Observer on ObservableSources that emit an infinite or very large number
      * of items that will use up memory.
      * A possible workaround is to apply `takeUntil` with a predicate or
@@ -5722,10 +5919,11 @@ public abstract class Observable<T> implements ObservableSource<T> {
      * @return the source ObservableSource, transformed by the transformer function
      * @see <a href="https://github.com/ReactiveX/RxJava/wiki/Implementing-Your-Own-Operators">RxJava wiki: Implementing Your Own Operators</a>
      */
+    @SuppressWarnings("unchecked")
     @CheckReturnValue
     @SchedulerSupport(SchedulerSupport.NONE)
-    public final <R> Observable<R> compose(ObservableTransformer<T, R> composer) {
-        return wrap(composer.apply(this));
+    public final <R> Observable<R> compose(ObservableTransformer<? super T, ? extends R> composer) {
+        return wrap(((ObservableTransformer<T, R>) ObjectHelper.requireNonNull(composer, "composer is null")).apply(this));
     }
 
     /**
@@ -5835,6 +6033,7 @@ public abstract class Observable<T> implements ObservableSource<T> {
     @SchedulerSupport(SchedulerSupport.NONE)
     public final <R> Observable<R> concatMapDelayError(Function<? super T, ? extends ObservableSource<? extends R>> mapper,
             int prefetch, boolean tillTheEnd) {
+        ObjectHelper.requireNonNull(mapper, "mapper is null");
         ObjectHelper.verifyPositive(prefetch, "prefetch");
         if (this instanceof ScalarCallable) {
             @SuppressWarnings("unchecked")
@@ -5885,7 +6084,7 @@ public abstract class Observable<T> implements ObservableSource<T> {
      * @param mapper the function that maps a sequence of values into a sequence of ObservableSources that will be
      *               eagerly concatenated
      * @param maxConcurrency the maximum number of concurrent subscribed ObservableSources
-     * @param prefetch hints about the number of expected source sequence values
+     * @param prefetch hints about the number of expected values from each inner ObservableSource, must be positive
      * @return the new ObservableSource instance with the specified concatenation behavior
      * @since 2.0
      */
@@ -5954,6 +6153,9 @@ public abstract class Observable<T> implements ObservableSource<T> {
     @SchedulerSupport(SchedulerSupport.NONE)
     public final <R> Observable<R> concatMapEagerDelayError(Function<? super T, ? extends ObservableSource<? extends R>> mapper,
             int maxConcurrency, int prefetch, boolean tillTheEnd) {
+        ObjectHelper.requireNonNull(mapper, "mapper is null");
+        ObjectHelper.verifyPositive(maxConcurrency, "maxConcurrency");
+        ObjectHelper.verifyPositive(prefetch, "prefetch");
         return RxJavaPlugins.onAssembly(new ObservableConcatMapEager<T, R>(this, mapper, tillTheEnd ? ErrorMode.END : ErrorMode.BOUNDARY, maxConcurrency, prefetch));
     }
 
@@ -6007,6 +6209,8 @@ public abstract class Observable<T> implements ObservableSource<T> {
     @CheckReturnValue
     @SchedulerSupport(SchedulerSupport.NONE)
     public final <U> Observable<U> concatMapIterable(final Function<? super T, ? extends Iterable<? extends U>> mapper, int prefetch) {
+        ObjectHelper.requireNonNull(mapper, "mapper is null");
+        ObjectHelper.verifyPositive(prefetch, "prefetch");
         return concatMap(ObservableInternalHelper.flatMapIntoIterable(mapper), prefetch);
     }
 
@@ -6621,13 +6825,13 @@ public abstract class Observable<T> implements ObservableSource<T> {
      *  <td><b>Operator-fusion:</b></dt>
      *  <dd>This operator supports boundary-limited synchronous or asynchronous queue-fusion.</dd>
      * </dl>
+     * <p>History: 2.0.1 - experimental
      * @param onAfterNext the Consumer that will be called after emitting an item from upstream to the downstream
      * @return the new Observable instance
-     * @since 2.0.1 - experimental
+     * @since 2.1
      */
     @CheckReturnValue
     @SchedulerSupport(SchedulerSupport.NONE)
-    @Experimental
     public final Observable<T> doAfterNext(Consumer<? super T> onAfterNext) {
         ObjectHelper.requireNonNull(onAfterNext, "onAfterNext is null");
         return RxJavaPlugins.onAssembly(new ObservableDoAfterNext<T>(this, onAfterNext));
@@ -6670,28 +6874,26 @@ public abstract class Observable<T> implements ObservableSource<T> {
      *  <td><b>Operator-fusion:</b></dt>
      *  <dd>This operator supports boundary-limited synchronous or asynchronous queue-fusion.</dd>
      * </dl>
+     * <p>History: 2.0.1 - experimental
      * @param onFinally the action called when this Observable terminates or gets cancelled
      * @return the new Observable instance
-     * @since 2.0.1 - experimental
+     * @since 2.1
      */
     @CheckReturnValue
     @SchedulerSupport(SchedulerSupport.NONE)
-    @Experimental
     public final Observable<T> doFinally(Action onFinally) {
         ObjectHelper.requireNonNull(onFinally, "onFinally is null");
         return RxJavaPlugins.onAssembly(new ObservableDoFinally<T>(this, onFinally));
     }
 
     /**
-     * Calls the unsubscribe {@code Action} if the downstream disposes the sequence.
+     * Calls the dispose {@code Action} if the downstream disposes the sequence.
      * <p>
      * The action is shared between subscriptions and thus may be called concurrently from multiple
      * threads; the action must be thread safe.
      * <p>
-     * If the action throws a runtime exception, that exception is rethrown by the {@code unsubscribe()} call,
+     * If the action throws a runtime exception, that exception is rethrown by the {@code dispose()} call,
      * sometimes as a {@code CompositeException} if there were multiple exceptions along the way.
-     * <p>
-     * Note that terminal events trigger the action unless the {@code ObservableSource} is subscribed to via {@code unsafeSubscribe()}.
      * <p>
      * <img width="640" height="310" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/doOnUnsubscribe.png" alt="">
      * <dl>
@@ -6702,6 +6904,7 @@ public abstract class Observable<T> implements ObservableSource<T> {
      * @param onDispose
      *            the action that gets called when the source {@code ObservableSource}'s Disposable is disposed
      * @return the source {@code ObservableSource} modified so as to call this Action when appropriate
+     * @throws NullPointerException if onDispose is null
      * @see <a href="http://reactivex.io/documentation/operators/do.html">ReactiveX operators documentation: Do</a>
      */
     @CheckReturnValue
@@ -7040,7 +7243,7 @@ public abstract class Observable<T> implements ObservableSource<T> {
      * Returns a Maybe that emits only the very first item emitted by the source ObservableSource, or
      * completes if the source ObservableSource is empty.
      * <p>
-     * <img width="640" height="310" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/firstElement.png" alt="">
+     * <img width="640" height="237" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/firstElement.m.png" alt="">
      * <dl>
      *  <dt><b>Scheduler:</b></dt>
      *  <dd>{@code firstElement} does not operate by default on a particular {@link Scheduler}.</dd>
@@ -7059,7 +7262,7 @@ public abstract class Observable<T> implements ObservableSource<T> {
      * Returns a Single that emits only the very first item emitted by the source ObservableSource, or a default item
      * if the source ObservableSource completes without emitting any items.
      * <p>
-     * <img width="640" height="305" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/first.2.png" alt="">
+     * <img width="640" height="286" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/first.s.png" alt="">
      * <dl>
      *  <dt><b>Scheduler:</b></dt>
      *  <dd>{@code first} does not operate by default on a particular {@link Scheduler}.</dd>
@@ -7551,7 +7754,7 @@ public abstract class Observable<T> implements ObservableSource<T> {
      * Returns an Observable that merges each item emitted by the source ObservableSource with the values in an
      * Iterable corresponding to that item that is generated by a selector.
      * <p>
-     * <img width="640" height="310" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/mergeMapIterable.png" alt="">
+     * <img width="640" height="310" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/flatMapIterable.o.png" alt="">
      * <dl>
      *  <dt><b>Scheduler:</b></dt>
      *  <dd>{@code flatMapIterable} does not operate by default on a particular {@link Scheduler}.</dd>
@@ -7577,7 +7780,7 @@ public abstract class Observable<T> implements ObservableSource<T> {
      * Returns an Observable that emits the results of applying a function to the pair of values from the source
      * ObservableSource and an Iterable corresponding to that item that is generated by a selector.
      * <p>
-     * <img width="640" height="390" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/mergeMapIterable.r.png" alt="">
+     * <img width="640" height="390" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/flatMapIterable.o.r.png" alt="">
      * <dl>
      *  <dt><b>Scheduler:</b></dt>
      *  <dd>{@code flatMapIterable} does not operate by default on a particular {@link Scheduler}.</dd>
@@ -7601,6 +7804,8 @@ public abstract class Observable<T> implements ObservableSource<T> {
     @SchedulerSupport(SchedulerSupport.NONE)
     public final <U, V> Observable<V> flatMapIterable(final Function<? super T, ? extends Iterable<? extends U>> mapper,
             BiFunction<? super T, ? super U, ? extends V> resultSelector) {
+        ObjectHelper.requireNonNull(mapper, "mapper is null");
+        ObjectHelper.requireNonNull(resultSelector, "resultSelector is null");
         return flatMap(ObservableInternalHelper.flatMapIntoIterable(mapper), resultSelector, false, bufferSize(), bufferSize());
     }
 
@@ -7712,6 +7917,10 @@ public abstract class Observable<T> implements ObservableSource<T> {
     /**
      * Subscribes to the {@link ObservableSource} and receives notifications for each element until the
      * onNext Predicate returns false.
+     * <p>
+     * If the Observable emits an error, it is wrapped into an
+     * {@link io.reactivex.exceptions.OnErrorNotImplementedException OnErrorNotImplementedException}
+     * and routed to the RxJavaPlugins.onError handler.
      * <dl>
      *  <dt><b>Scheduler:</b></dt>
      *  <dd>{@code forEachWhile} does not operate by default on a particular {@link Scheduler}.</dd>
@@ -7728,7 +7937,7 @@ public abstract class Observable<T> implements ObservableSource<T> {
     @CheckReturnValue
     @SchedulerSupport(SchedulerSupport.NONE)
     public final Disposable forEachWhile(Predicate<? super T> onNext) {
-        return forEachWhile(onNext, Functions.ERROR_CONSUMER, Functions.EMPTY_ACTION);
+        return forEachWhile(onNext, Functions.ON_ERROR_MISSING, Functions.EMPTY_ACTION);
     }
 
     /**
@@ -8028,6 +8237,10 @@ public abstract class Observable<T> implements ObservableSource<T> {
             Function<? super TRight, ? extends ObservableSource<TRightEnd>> rightEnd,
             BiFunction<? super T, ? super Observable<TRight>, ? extends R> resultSelector
                     ) {
+        ObjectHelper.requireNonNull(other, "other is null");
+        ObjectHelper.requireNonNull(leftEnd, "leftEnd is null");
+        ObjectHelper.requireNonNull(rightEnd, "rightEnd is null");
+        ObjectHelper.requireNonNull(resultSelector, "resultSelector is null");
         return RxJavaPlugins.onAssembly(new ObservableGroupJoin<T, TRight, TLeftEnd, TRightEnd, R>(
                 this, other, leftEnd, rightEnd, resultSelector));
     }
@@ -8129,6 +8342,10 @@ public abstract class Observable<T> implements ObservableSource<T> {
             Function<? super TRight, ? extends ObservableSource<TRightEnd>> rightEnd,
             BiFunction<? super T, ? super TRight, ? extends R> resultSelector
                     ) {
+        ObjectHelper.requireNonNull(other, "other is null");
+        ObjectHelper.requireNonNull(leftEnd, "leftEnd is null");
+        ObjectHelper.requireNonNull(rightEnd, "rightEnd is null");
+        ObjectHelper.requireNonNull(resultSelector, "resultSelector is null");
         return RxJavaPlugins.onAssembly(new ObservableJoin<T, TRight, TLeftEnd, TRightEnd, R>(
                 this, other, leftEnd, rightEnd, resultSelector));
     }
@@ -8706,12 +8923,12 @@ public abstract class Observable<T> implements ObservableSource<T> {
      * the application of this operator via {@link #defer(Callable)}:
      * <pre><code>
      * ObservableSource&lt;T> source = ...
-     * ObservableSource.defer(() -> source.reduce(new ArrayList&lt;>(), (list, item) -> list.add(item)));
+     * Observable.defer(() -> source.reduce(new ArrayList&lt;>(), (list, item) -> list.add(item)));
      *
      * // alternatively, by using compose to stay fluent
      *
      * source.compose(o ->
-     *     ObservableSource.defer(() -> o.reduce(new ArrayList&lt;>(), (list, item) -> list.add(item)))
+     *     Observable.defer(() -> o.reduce(new ArrayList&lt;>(), (list, item) -> list.add(item)))
      * );
      * </code></pre>
      * <dl>
@@ -8755,12 +8972,12 @@ public abstract class Observable<T> implements ObservableSource<T> {
      * the application of this operator via {@link #defer(Callable)}:
      * <pre><code>
      * ObservableSource&lt;T> source = ...
-     * ObservableSource.defer(() -> source.reduce(new ArrayList&lt;>(), (list, item) -> list.add(item)));
+     * Observable.defer(() -> source.reduce(new ArrayList&lt;>(), (list, item) -> list.add(item)));
      *
      * // alternatively, by using compose to stay fluent
      *
      * source.compose(o ->
-     *     ObservableSource.defer(() -> o.reduce(new ArrayList&lt;>(), (list, item) -> list.add(item)))
+     *     Observable.defer(() -> o.reduce(new ArrayList&lt;>(), (list, item) -> list.add(item)))
      * );
      * </code></pre>
      * <dl>
@@ -8962,6 +9179,7 @@ public abstract class Observable<T> implements ObservableSource<T> {
     @SchedulerSupport(SchedulerSupport.NONE)
     public final <R> Observable<R> replay(Function<? super Observable<T>, ? extends ObservableSource<R>> selector, final int bufferSize) {
         ObjectHelper.requireNonNull(selector, "selector is null");
+        ObjectHelper.verifyPositive(bufferSize, "bufferSize");
         return ObservableReplay.multicastSelector(ObservableInternalHelper.replayCallable(this, bufferSize), selector);
     }
 
@@ -9004,7 +9222,7 @@ public abstract class Observable<T> implements ObservableSource<T> {
      * emitted by a {@link ConnectableObservable} that shares a single subscription to the source ObservableSource,
      * replaying no more than {@code bufferSize} items that were emitted within a specified time window.
      * <p>
-     * <img width="640" height="445" height="440" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/replay.fnts.png" alt="">
+     * <img width="640" height="445" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/replay.fnts.png" alt="">
      * <dl>
      *  <dt><b>Scheduler:</b></dt>
      *  <dd>You specify which {@link Scheduler} this operator will use</dd>
@@ -9034,8 +9252,10 @@ public abstract class Observable<T> implements ObservableSource<T> {
     @CheckReturnValue
     @SchedulerSupport(SchedulerSupport.CUSTOM)
     public final <R> Observable<R> replay(Function<? super Observable<T>, ? extends ObservableSource<R>> selector, final int bufferSize, final long time, final TimeUnit unit, final Scheduler scheduler) {
-        ObjectHelper.verifyPositive(bufferSize, "bufferSize");
         ObjectHelper.requireNonNull(selector, "selector is null");
+        ObjectHelper.verifyPositive(bufferSize, "bufferSize");
+        ObjectHelper.requireNonNull(unit, "unit is null");
+        ObjectHelper.requireNonNull(scheduler, "scheduler is null");
         return ObservableReplay.multicastSelector(
                 ObservableInternalHelper.replayCallable(this, bufferSize, time, unit, scheduler), selector);
     }
@@ -9068,6 +9288,9 @@ public abstract class Observable<T> implements ObservableSource<T> {
     @CheckReturnValue
     @SchedulerSupport(SchedulerSupport.CUSTOM)
     public final <R> Observable<R> replay(final Function<? super Observable<T>, ? extends ObservableSource<R>> selector, final int bufferSize, final Scheduler scheduler) {
+        ObjectHelper.requireNonNull(selector, "selector is null");
+        ObjectHelper.requireNonNull(scheduler, "scheduler is null");
+        ObjectHelper.verifyPositive(bufferSize, "bufferSize");
         return ObservableReplay.multicastSelector(ObservableInternalHelper.replayCallable(this, bufferSize),
                 ObservableInternalHelper.replayFunction(selector, scheduler));
     }
@@ -9191,6 +9414,7 @@ public abstract class Observable<T> implements ObservableSource<T> {
     @CheckReturnValue
     @SchedulerSupport(SchedulerSupport.NONE)
     public final ConnectableObservable<T> replay(final int bufferSize) {
+        ObjectHelper.verifyPositive(bufferSize, "bufferSize");
         return ObservableReplay.create(this, bufferSize);
     }
 
@@ -9282,6 +9506,7 @@ public abstract class Observable<T> implements ObservableSource<T> {
     @CheckReturnValue
     @SchedulerSupport(SchedulerSupport.CUSTOM)
     public final ConnectableObservable<T> replay(final int bufferSize, final Scheduler scheduler) {
+        ObjectHelper.verifyPositive(bufferSize, "bufferSize");
         return ObservableReplay.observeOn(replay(bufferSize), scheduler);
     }
 
@@ -9612,6 +9837,37 @@ public abstract class Observable<T> implements ObservableSource<T> {
 
     /**
      * Returns an Observable that emits the most recently emitted item (if any) emitted by the source ObservableSource
+     * within periodic time intervals and optionally emit the very last upstream item when the upstream completes.
+     * <p>
+     * <img width="640" height="276" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/sample.emitlast.png" alt="">
+     * <dl>
+     *  <dt><b>Scheduler:</b></dt>
+     *  <dd>{@code sample} operates by default on the {@code computation} {@link Scheduler}.</dd>
+     * </dl>
+     *
+     * <p>History: 2.0.5 - experimental
+     * @param period
+     *            the sampling rate
+     * @param unit
+     *            the {@link TimeUnit} in which {@code period} is defined
+     * @return an Observable that emits the results of sampling the items emitted by the source ObservableSource at
+     *         the specified time interval
+     * @param emitLast
+     *            if true and the upstream completes while there is still an unsampled item available,
+     *            that item is emitted to downstream before completion
+     *            if false, an unsampled last item is ignored.
+     * @see <a href="http://reactivex.io/documentation/operators/sample.html">ReactiveX operators documentation: Sample</a>
+     * @see #throttleLast(long, TimeUnit)
+     * @since 2.1
+     */
+    @CheckReturnValue
+    @SchedulerSupport(SchedulerSupport.COMPUTATION)
+    public final Observable<T> sample(long period, TimeUnit unit, boolean emitLast) {
+        return sample(period, unit, Schedulers.computation(), emitLast);
+    }
+
+    /**
+     * Returns an Observable that emits the most recently emitted item (if any) emitted by the source ObservableSource
      * within periodic time intervals, where the intervals are defined on a particular Scheduler.
      * <p>
      * <img width="640" height="305" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/sample.s.png" alt="">
@@ -9636,7 +9892,43 @@ public abstract class Observable<T> implements ObservableSource<T> {
     public final Observable<T> sample(long period, TimeUnit unit, Scheduler scheduler) {
         ObjectHelper.requireNonNull(unit, "unit is null");
         ObjectHelper.requireNonNull(scheduler, "scheduler is null");
-        return RxJavaPlugins.onAssembly(new ObservableSampleTimed<T>(this, period, unit, scheduler));
+        return RxJavaPlugins.onAssembly(new ObservableSampleTimed<T>(this, period, unit, scheduler, false));
+    }
+
+    /**
+     * Returns an Observable that emits the most recently emitted item (if any) emitted by the source ObservableSource
+     * within periodic time intervals, where the intervals are defined on a particular Scheduler
+     *  and optionally emit the very last upstream item when the upstream completes.
+     * <p>
+     * <img width="640" height="276" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/sample.s.emitlast.png" alt="">
+     * <dl>
+     *  <dt><b>Scheduler:</b></dt>
+     *  <dd>You specify which {@link Scheduler} this operator will use</dd>
+     * </dl>
+     *
+     * <p>History: 2.0.5 - experimental
+     * @param period
+     *            the sampling rate
+     * @param unit
+     *            the {@link TimeUnit} in which {@code period} is defined
+     * @param scheduler
+     *            the {@link Scheduler} to use when sampling
+     * @param emitLast
+     *            if true and the upstream completes while there is still an unsampled item available,
+     *            that item is emitted to downstream before completion
+     *            if false, an unsampled last item is ignored.
+     * @return an Observable that emits the results of sampling the items emitted by the source ObservableSource at
+     *         the specified time interval
+     * @see <a href="http://reactivex.io/documentation/operators/sample.html">ReactiveX operators documentation: Sample</a>
+     * @see #throttleLast(long, TimeUnit, Scheduler)
+     * @since 2.1
+     */
+    @CheckReturnValue
+    @SchedulerSupport(SchedulerSupport.CUSTOM)
+    public final Observable<T> sample(long period, TimeUnit unit, Scheduler scheduler, boolean emitLast) {
+        ObjectHelper.requireNonNull(unit, "unit is null");
+        ObjectHelper.requireNonNull(scheduler, "scheduler is null");
+        return RxJavaPlugins.onAssembly(new ObservableSampleTimed<T>(this, period, unit, scheduler, emitLast));
     }
 
     /**
@@ -9644,9 +9936,8 @@ public abstract class Observable<T> implements ObservableSource<T> {
      * emits the most recently emitted item (if any) emitted by the source ObservableSource since the previous
      * emission from the {@code sampler} ObservableSource.
      * <p>
-     * <img width="640" height="305" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/sample.o.png" alt="">
+     * <img width="640" height="289" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/sample.o.nolast.png" alt="">
      * <dl>
-     *      ObservableSource to control data flow.</dd>
      *  <dt><b>Scheduler:</b></dt>
      *  <dd>This version of {@code sample} does not operate by default on a particular {@link Scheduler}.</dd>
      * </dl>
@@ -9662,7 +9953,39 @@ public abstract class Observable<T> implements ObservableSource<T> {
     @SchedulerSupport(SchedulerSupport.NONE)
     public final <U> Observable<T> sample(ObservableSource<U> sampler) {
         ObjectHelper.requireNonNull(sampler, "sampler is null");
-        return RxJavaPlugins.onAssembly(new ObservableSampleWithObservable<T>(this, sampler));
+        return RxJavaPlugins.onAssembly(new ObservableSampleWithObservable<T>(this, sampler, false));
+    }
+
+    /**
+     * Returns an Observable that, when the specified {@code sampler} ObservableSource emits an item or completes,
+     * emits the most recently emitted item (if any) emitted by the source ObservableSource since the previous
+     * emission from the {@code sampler} ObservableSource
+     * and optionally emit the very last upstream item when the upstream or other ObservableSource complete.
+     * <p>
+     * <img width="640" height="289" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/sample.o.emitlast.png" alt="">
+     * <dl>
+     *  <dt><b>Scheduler:</b></dt>
+     *  <dd>This version of {@code sample} does not operate by default on a particular {@link Scheduler}.</dd>
+     * </dl>
+     *
+     * <p>History: 2.0.5 - experimental
+     * @param <U> the element type of the sampler ObservableSource
+     * @param sampler
+     *            the ObservableSource to use for sampling the source ObservableSource
+     * @param emitLast
+     *            if true and the upstream completes while there is still an unsampled item available,
+     *            that item is emitted to downstream before completion
+     *            if false, an unsampled last item is ignored.
+     * @return an Observable that emits the results of sampling the items emitted by this ObservableSource whenever
+     *         the {@code sampler} ObservableSource emits an item or completes
+     * @see <a href="http://reactivex.io/documentation/operators/sample.html">ReactiveX operators documentation: Sample</a>
+     * @since 2.1
+     */
+    @CheckReturnValue
+    @SchedulerSupport(SchedulerSupport.NONE)
+    public final <U> Observable<T> sample(ObservableSource<U> sampler, boolean emitLast) {
+        ObjectHelper.requireNonNull(sampler, "sampler is null");
+        return RxJavaPlugins.onAssembly(new ObservableSampleWithObservable<T>(this, sampler, emitLast));
     }
 
     /**
@@ -9711,12 +10034,12 @@ public abstract class Observable<T> implements ObservableSource<T> {
      * the application of this operator via {@link #defer(Callable)}:
      * <pre><code>
      * ObservableSource&lt;T> source = ...
-     * ObservableSource.defer(() -> source.scan(new ArrayList&lt;>(), (list, item) -> list.add(item)));
+     * Observable.defer(() -> source.scan(new ArrayList&lt;>(), (list, item) -> list.add(item)));
      *
      * // alternatively, by using compose to stay fluent
      *
      * source.compose(o ->
-     *     ObservableSource.defer(() -> o.scan(new ArrayList&lt;>(), (list, item) -> list.add(item)))
+     *     Observable.defer(() -> o.scan(new ArrayList&lt;>(), (list, item) -> list.add(item)))
      * );
      * </code></pre>
      * <dl>
@@ -9760,12 +10083,12 @@ public abstract class Observable<T> implements ObservableSource<T> {
      * the application of this operator via {@link #defer(Callable)}:
      * <pre><code>
      * ObservableSource&lt;T> source = ...
-     * ObservableSource.defer(() -> source.scan(new ArrayList&lt;>(), (list, item) -> list.add(item)));
+     * Observable.defer(() -> source.scan(new ArrayList&lt;>(), (list, item) -> list.add(item)));
      *
      * // alternatively, by using compose to stay fluent
      *
      * source.compose(o ->
-     *     ObservableSource.defer(() -> o.scan(new ArrayList&lt;>(), (list, item) -> list.add(item)))
+     *     Observable.defer(() -> o.scan(new ArrayList&lt;>(), (list, item) -> list.add(item)))
      * );
      * </code></pre>
      * <dl>
@@ -9821,7 +10144,7 @@ public abstract class Observable<T> implements ObservableSource<T> {
     /**
      * Returns a new {@link ObservableSource} that multicasts (shares) the original {@link ObservableSource}. As long as
      * there is at least one {@link Observer} this {@link ObservableSource} will be subscribed and emitting data.
-     * When all subscribers have unsubscribed it will unsubscribe from the source {@link ObservableSource}.
+     * When all subscribers have disposed it will dispose the source {@link ObservableSource}.
      * <p>
      * This is an alias for {@link #publish()}.{@link ConnectableObservable#refCount()}.
      * <p>
@@ -9842,7 +10165,7 @@ public abstract class Observable<T> implements ObservableSource<T> {
     }
 
     /**
-     * Returns an Observable that emits the single item emitted by this Observable if this Observable
+     * Returns a Maybe that emits the single item emitted by this Observable if this Observable
      * emits only a single item, otherwise if this Observable emits more than one item or no items, an
      * {@code IllegalArgumentException} or {@code NoSuchElementException} is signalled respectively.
      * <p>
@@ -9852,7 +10175,7 @@ public abstract class Observable<T> implements ObservableSource<T> {
      *  <dd>{@code singleElement} does not operate by default on a particular {@link Scheduler}.</dd>
      * </dl>
      *
-     * @return an Observable that emits the single item emitted by the source ObservableSource
+     * @return a {@link Maybe} that emits the single item emitted by the source ObservableSource
      * @see <a href="http://reactivex.io/documentation/operators/first.html">ReactiveX operators documentation: First</a>
      */
     @CheckReturnValue
@@ -9885,7 +10208,7 @@ public abstract class Observable<T> implements ObservableSource<T> {
     }
 
     /**
-     * Returns a Single that emits the single item emitted by this Observalbe if this Observable
+     * Returns a Single that emits the single item emitted by this Observable if this Observable
      * emits only a single item, otherwise
      * if this Observable completes without emitting any items or emits more than one item a
      * {@link NoSuchElementException} or {@code IllegalArgumentException} will be signalled respectively.
@@ -10261,6 +10584,7 @@ public abstract class Observable<T> implements ObservableSource<T> {
     @CheckReturnValue
     @SchedulerSupport(SchedulerSupport.NONE)
     public final Observable<T> sorted(Comparator<? super T> sortFunction) {
+        ObjectHelper.requireNonNull(sortFunction, "sortFunction is null");
         return toList().toObservable().map(Functions.listSorter(sortFunction)).flatMapIterable(Functions.<List<T>>identity());
     }
 
@@ -10365,7 +10689,9 @@ public abstract class Observable<T> implements ObservableSource<T> {
     /**
      * Subscribes to an ObservableSource and ignores {@code onNext} and {@code onComplete} emissions.
      * <p>
-     * If the Observable emits an error, it is routed to the RxJavaPlugins.onError handler.
+     * If the Observable emits an error, it is wrapped into an
+     * {@link io.reactivex.exceptions.OnErrorNotImplementedException OnErrorNotImplementedException}
+     * and routed to the RxJavaPlugins.onError handler.
      * <dl>
      *  <dt><b>Scheduler:</b></dt>
      *  <dd>{@code subscribe} does not operate by default on a particular {@link Scheduler}.</dd>
@@ -10377,13 +10703,15 @@ public abstract class Observable<T> implements ObservableSource<T> {
      */
     @SchedulerSupport(SchedulerSupport.NONE)
     public final Disposable subscribe() {
-        return subscribe(Functions.emptyConsumer(), Functions.ERROR_CONSUMER, Functions.EMPTY_ACTION, Functions.emptyConsumer());
+        return subscribe(Functions.emptyConsumer(), Functions.ON_ERROR_MISSING, Functions.EMPTY_ACTION, Functions.emptyConsumer());
     }
 
     /**
      * Subscribes to an ObservableSource and provides a callback to handle the items it emits.
      * <p>
-     * If the Observable emits an error, it is routed to the RxJavaPlugins.onError handler.
+     * If the Observable emits an error, it is wrapped into an
+     * {@link io.reactivex.exceptions.OnErrorNotImplementedException OnErrorNotImplementedException}
+     * and routed to the RxJavaPlugins.onError handler.
      * <dl>
      *  <dt><b>Scheduler:</b></dt>
      *  <dd>{@code subscribe} does not operate by default on a particular {@link Scheduler}.</dd>
@@ -10400,7 +10728,7 @@ public abstract class Observable<T> implements ObservableSource<T> {
     @CheckReturnValue
     @SchedulerSupport(SchedulerSupport.NONE)
     public final Disposable subscribe(Consumer<? super T> onNext) {
-        return subscribe(onNext, Functions.ERROR_CONSUMER, Functions.EMPTY_ACTION, Functions.emptyConsumer());
+        return subscribe(onNext, Functions.ON_ERROR_MISSING, Functions.EMPTY_ACTION, Functions.emptyConsumer());
     }
 
     /**
@@ -10593,6 +10921,7 @@ public abstract class Observable<T> implements ObservableSource<T> {
     /**
      * Returns an Observable that emits the items emitted by the source ObservableSource or the items of an alternate
      * ObservableSource if the source ObservableSource is empty.
+     * <img width="640" height="255" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/switchifempty.png" alt="">
      * <p/>
      * <dl>
      *  <dt><b>Scheduler:</b></dt>
@@ -10618,7 +10947,7 @@ public abstract class Observable<T> implements ObservableSource<T> {
      * of these ObservableSources.
      * <p>
      * The resulting ObservableSource completes if both the upstream ObservableSource and the last inner ObservableSource, if any, complete.
-     * If the upstream ObservableSource signals an onError, the inner ObservableSource is unsubscribed and the error delivered in-sequence.
+     * If the upstream ObservableSource signals an onError, the inner ObservableSource is disposed and the error delivered in-sequence.
      * <p>
      * <img width="640" height="350" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/switchMap.png" alt="">
      * <dl>
@@ -10645,7 +10974,7 @@ public abstract class Observable<T> implements ObservableSource<T> {
      * of these ObservableSources.
      * <p>
      * The resulting ObservableSource completes if both the upstream ObservableSource and the last inner ObservableSource, if any, complete.
-     * If the upstream ObservableSource signals an onError, the inner ObservableSource is unsubscribed and the error delivered in-sequence.
+     * If the upstream ObservableSource signals an onError, the inner ObservableSource is disposed and the error delivered in-sequence.
      * <p>
      * <img width="640" height="350" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/switchMap.png" alt="">
      * <dl>
@@ -10676,6 +11005,67 @@ public abstract class Observable<T> implements ObservableSource<T> {
             return ObservableScalarXMap.scalarXMap(v, mapper);
         }
         return RxJavaPlugins.onAssembly(new ObservableSwitchMap<T, R>(this, mapper, bufferSize, false));
+    }
+
+    /**
+     * Returns a new ObservableSource by applying a function that you supply to each item emitted by the source
+     * ObservableSource that returns a SingleSource, and then emitting the item emitted by the most recently emitted
+     * of these SingleSources.
+     * <p>
+     * The resulting ObservableSource completes if both the upstream ObservableSource and the last inner SingleSource, if any, complete.
+     * If the upstream ObservableSource signals an onError, the inner SingleSource is disposed and the error delivered in-sequence.
+     * <p>
+     * <img width="640" height="350" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/switchMap.png" alt="">
+     * <dl>
+     *  <dt><b>Scheduler:</b></dt>
+     *  <dd>{@code switchMapSingle} does not operate by default on a particular {@link Scheduler}.</dd>
+     * </dl>
+     *
+     * @param <R> the element type of the inner SingleSources and the output
+     * @param mapper
+     *            a function that, when applied to an item emitted by the source ObservableSource, returns a
+     *            SingleSource
+     * @return an Observable that emits the item emitted by the SingleSource returned from applying {@code func} to the most recently emitted item emitted by the source ObservableSource
+     * @see <a href="http://reactivex.io/documentation/operators/flatmap.html">ReactiveX operators documentation: FlatMap</a>
+     * @since 2.0.8
+     */
+    @Experimental
+    @CheckReturnValue
+    @SchedulerSupport(SchedulerSupport.NONE)
+    @NonNull
+    public final <R> Observable<R> switchMapSingle(@NonNull Function<? super T, ? extends SingleSource<? extends R>> mapper) {
+        return ObservableInternalHelper.switchMapSingle(this, mapper);
+    }
+
+    /**
+     * Returns a new ObservableSource by applying a function that you supply to each item emitted by the source
+     * ObservableSource that returns a SingleSource, and then emitting the item emitted by the most recently emitted
+     * of these SingleSources and delays any error until all SingleSources terminate.
+     * <p>
+     * The resulting ObservableSource completes if both the upstream ObservableSource and the last inner SingleSource, if any, complete.
+     * If the upstream ObservableSource signals an onError, the termination of the last inner SingleSource will emit that error as is
+     * or wrapped into a CompositeException along with the other possible errors the former inner SingleSources signalled.
+     * <p>
+     * <img width="640" height="350" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/switchMap.png" alt="">
+     * <dl>
+     *  <dt><b>Scheduler:</b></dt>
+     *  <dd>{@code switchMapSingleDelayError} does not operate by default on a particular {@link Scheduler}.</dd>
+     * </dl>
+     *
+     * @param <R> the element type of the inner SingleSources and the output
+     * @param mapper
+     *            a function that, when applied to an item emitted by the source ObservableSource, returns a
+     *            SingleSource
+     * @return an Observable that emits the item emitted by the SingleSource returned from applying {@code func} to the most recently emitted item emitted by the source ObservableSource
+     * @see <a href="http://reactivex.io/documentation/operators/flatmap.html">ReactiveX operators documentation: FlatMap</a>
+     * @since 2.0.8
+     */
+    @Experimental
+    @CheckReturnValue
+    @SchedulerSupport(SchedulerSupport.NONE)
+    @NonNull
+    public final <R> Observable<R> switchMapSingleDelayError(@NonNull Function<? super T, ? extends SingleSource<? extends R>> mapper) {
+        return ObservableInternalHelper.switchMapSingleDelayError(this, mapper);
     }
 
     /**
@@ -11837,7 +12227,7 @@ public abstract class Observable<T> implements ObservableSource<T> {
     @SchedulerSupport(SchedulerSupport.NONE)
     public final <R> R to(Function<? super Observable<T>, R> converter) {
         try {
-            return converter.apply(this);
+            return ObjectHelper.requireNonNull(converter, "converter is null").apply(this);
         } catch (Throwable ex) {
             Exceptions.throwIfFatal(ex);
             throw ExceptionHelper.wrapOrThrow(ex);
@@ -11857,7 +12247,7 @@ public abstract class Observable<T> implements ObservableSource<T> {
      * calling its {@link #subscribe} method.
      * <p>
      * Be careful not to use this operator on ObservableSources that emit infinite or very large numbers of items, as
-     * you do not have the option to unsubscribe.
+     * you do not have the option to dispose.
      * <dl>
      *  <dt><b>Scheduler:</b></dt>
      *  <dd>{@code toList} does not operate by default on a particular {@link Scheduler}.</dd>
@@ -11886,7 +12276,7 @@ public abstract class Observable<T> implements ObservableSource<T> {
      * calling its {@link #subscribe} method.
      * <p>
      * Be careful not to use this operator on ObservableSources that emit infinite or very large numbers of items, as
-     * you do not have the option to unsubscribe.
+     * you do not have the option to dispose.
      * <dl>
      *  <dt><b>Scheduler:</b></dt>
      *  <dd>{@code toList} does not operate by default on a particular {@link Scheduler}.</dd>
@@ -11918,7 +12308,7 @@ public abstract class Observable<T> implements ObservableSource<T> {
      * calling its {@link #subscribe} method.
      * <p>
      * Be careful not to use this operator on ObservableSources that emit infinite or very large numbers of items, as
-     * you do not have the option to unsubscribe.
+     * you do not have the option to dispose.
      * <dl>
      *  <dt><b>Scheduler:</b></dt>
      *  <dd>{@code toList} does not operate by default on a particular {@link Scheduler}.</dd>
@@ -11960,6 +12350,7 @@ public abstract class Observable<T> implements ObservableSource<T> {
     @CheckReturnValue
     @SchedulerSupport(SchedulerSupport.NONE)
     public final <K> Single<Map<K, T>> toMap(final Function<? super T, ? extends K> keySelector) {
+        ObjectHelper.requireNonNull(keySelector, "keySelector is null");
         return collect(HashMapSupplier.<K, T>asCallable(), Functions.toMapKeySelector(keySelector));
     }
 
@@ -12024,6 +12415,10 @@ public abstract class Observable<T> implements ObservableSource<T> {
             final Function<? super T, ? extends K> keySelector,
             final Function<? super T, ? extends V> valueSelector,
             Callable<? extends Map<K, V>> mapSupplier) {
+        ObjectHelper.requireNonNull(keySelector, "keySelector is null");
+        ObjectHelper.requireNonNull(keySelector, "keySelector is null");
+        ObjectHelper.requireNonNull(valueSelector, "valueSelector is null");
+        ObjectHelper.requireNonNull(mapSupplier, "mapSupplier is null");
         return collect(mapSupplier, Functions.toMapKeyValueSelector(keySelector, valueSelector));
     }
 
@@ -12291,7 +12686,7 @@ public abstract class Observable<T> implements ObservableSource<T> {
     }
 
     /**
-     * Modifies the source ObservableSource so that subscribers will unsubscribe from it on a specified
+     * Modifies the source ObservableSource so that subscribers will dispose it on a specified
      * {@link Scheduler}.
      * <dl>
      *  <dt><b>Scheduler:</b></dt>
@@ -12780,6 +13175,7 @@ public abstract class Observable<T> implements ObservableSource<T> {
     @SchedulerSupport(SchedulerSupport.NONE)
     public final <B> Observable<Observable<T>> window(ObservableSource<B> boundary, int bufferSize) {
         ObjectHelper.requireNonNull(boundary, "boundary is null");
+        ObjectHelper.verifyPositive(bufferSize, "bufferSize");
         return RxJavaPlugins.onAssembly(new ObservableWindowBoundary<T, B>(this, boundary, bufferSize));
     }
 
@@ -12846,6 +13242,7 @@ public abstract class Observable<T> implements ObservableSource<T> {
             Function<? super U, ? extends ObservableSource<V>> closingIndicator, int bufferSize) {
         ObjectHelper.requireNonNull(openingIndicator, "openingIndicator is null");
         ObjectHelper.requireNonNull(closingIndicator, "closingIndicator is null");
+        ObjectHelper.verifyPositive(bufferSize, "bufferSize");
         return RxJavaPlugins.onAssembly(new ObservableWindowBoundarySelector<T, U, V>(this, openingIndicator, closingIndicator, bufferSize));
     }
 
@@ -12854,7 +13251,7 @@ public abstract class Observable<T> implements ObservableSource<T> {
      * ObservableSource emits connected, non-overlapping windows. It emits the current window and opens a new one
      * whenever the ObservableSource produced by the specified {@code closingIndicator} emits an item.
      * <p>
-     * <img width="640" height="460" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/window1.png" alt="">
+     * <img width="640" height="455" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/window1.png" alt="">
      * <dl>
      *  if left unconsumed.</dd>
      *  <dt><b>Scheduler:</b></dt>
@@ -12881,7 +13278,7 @@ public abstract class Observable<T> implements ObservableSource<T> {
      * ObservableSource emits connected, non-overlapping windows. It emits the current window and opens a new one
      * whenever the ObservableSource produced by the specified {@code closingIndicator} emits an item.
      * <p>
-     * <img width="640" height="460" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/window1.png" alt="">
+     * <img width="640" height="455" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/window1.png" alt="">
      * <dl>
      *  <dt><b>Scheduler:</b></dt>
      *  <dd>This version of {@code window} does not operate by default on a particular {@link Scheduler}.</dd>
@@ -12902,6 +13299,7 @@ public abstract class Observable<T> implements ObservableSource<T> {
     @SchedulerSupport(SchedulerSupport.NONE)
     public final <B> Observable<Observable<T>> window(Callable<? extends ObservableSource<B>> boundary, int bufferSize) {
         ObjectHelper.requireNonNull(boundary, "boundary is null");
+        ObjectHelper.verifyPositive(bufferSize, "bufferSize");
         return RxJavaPlugins.onAssembly(new ObservableWindowBoundarySupplier<T, B>(this, boundary, bufferSize));
     }
 
@@ -13154,11 +13552,11 @@ public abstract class Observable<T> implements ObservableSource<T> {
      * values, one each from the source ObservableSource and another specified ObservableSource.
      * <p>
      * The operator subscribes to its sources in order they are specified and completes eagerly if
-     * one of the sources is shorter than the rest while unsubscribing the other sources. Therefore, it
+     * one of the sources is shorter than the rest while disposing the other sources. Therefore, it
      * is possible those other sources will never be able to run to completion (and thus not calling
      * {@code doOnComplete()}). This can also happen if the sources are exactly the same length; if
      * source A completes and B has been consumed and is about to complete, the operator detects A won't
-     * be sending further values and it will unsubscribe B immediately. For example:
+     * be sending further values and it will dispose B immediately. For example:
      * <pre><code>range(1, 5).doOnComplete(action1).zipWith(range(6, 5).doOnComplete(action2), (a, b) -&gt; a + b)</code></pre>
      * {@code action1} will be called but {@code action2} won't.
      * <br>To work around this termination property,
@@ -13197,11 +13595,11 @@ public abstract class Observable<T> implements ObservableSource<T> {
      * values, one each from the source ObservableSource and another specified ObservableSource.
      * <p>
      * The operator subscribes to its sources in order they are specified and completes eagerly if
-     * one of the sources is shorter than the rest while unsubscribing the other sources. Therefore, it
+     * one of the sources is shorter than the rest while disposing the other sources. Therefore, it
      * is possible those other sources will never be able to run to completion (and thus not calling
      * {@code doOnComplete()}). This can also happen if the sources are exactly the same length; if
      * source A completes and B has been consumed and is about to complete, the operator detects A won't
-     * be sending further values and it will unsubscribe B immediately. For example:
+     * be sending further values and it will dispose B immediately. For example:
      * <pre><code>range(1, 5).doOnComplete(action1).zipWith(range(6, 5).doOnComplete(action2), (a, b) -&gt; a + b)</code></pre>
      * {@code action1} will be called but {@code action2} won't.
      * <br>To work around this termination property,
@@ -13242,11 +13640,11 @@ public abstract class Observable<T> implements ObservableSource<T> {
      * values, one each from the source ObservableSource and another specified ObservableSource.
      * <p>
      * The operator subscribes to its sources in order they are specified and completes eagerly if
-     * one of the sources is shorter than the rest while unsubscribing the other sources. Therefore, it
+     * one of the sources is shorter than the rest while disposing the other sources. Therefore, it
      * is possible those other sources will never be able to run to completion (and thus not calling
      * {@code doOnComplete()}). This can also happen if the sources are exactly the same length; if
      * source A completes and B has been consumed and is about to complete, the operator detects A won't
-     * be sending further values and it will unsubscribe B immediately. For example:
+     * be sending further values and it will dispose B immediately. For example:
      * <pre><code>range(1, 5).doOnComplete(action1).zipWith(range(6, 5).doOnComplete(action2), (a, b) -&gt; a + b)</code></pre>
      * {@code action1} will be called but {@code action2} won't.
      * <br>To work around this termination property,

@@ -1,5 +1,5 @@
 /**
- * Copyright 2016 Netflix, Inc.
+ * Copyright (c) 2016-present, RxJava Contributors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
@@ -17,17 +17,19 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.*;
 
 import java.util.List;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.junit.*;
 import org.mockito.*;
 
 import io.reactivex.*;
 import io.reactivex.exceptions.TestException;
+import io.reactivex.functions.Function;
 import io.reactivex.observables.ConnectableObservable;
 import io.reactivex.observers.*;
 import io.reactivex.plugins.RxJavaPlugins;
-import io.reactivex.schedulers.TestScheduler;
+import io.reactivex.schedulers.*;
 
 public class ObservableTimerTest {
     @Mock
@@ -303,4 +305,38 @@ public class ObservableTimerTest {
             RxJavaPlugins.reset();
         }
     }
+
+    @Test
+    public void timerInterruptible() throws Exception {
+        ScheduledExecutorService exec = Executors.newSingleThreadScheduledExecutor();
+        try {
+            for (Scheduler s : new Scheduler[] { Schedulers.single(), Schedulers.computation(), Schedulers.newThread(), Schedulers.io(), Schedulers.from(exec) }) {
+                final AtomicBoolean interrupted = new AtomicBoolean();
+                TestObserver<Long> ts = Observable.timer(1, TimeUnit.MILLISECONDS, s)
+                .map(new Function<Long, Long>() {
+                    @Override
+                    public Long apply(Long v) throws Exception {
+                        try {
+                        Thread.sleep(3000);
+                        } catch (InterruptedException ex) {
+                            interrupted.set(true);
+                        }
+                        return v;
+                    }
+                })
+                .test();
+
+                Thread.sleep(500);
+
+                ts.cancel();
+
+                Thread.sleep(500);
+
+                assertTrue(s.getClass().getSimpleName(), interrupted.get());
+            }
+        } finally {
+            exec.shutdown();
+        }
+    }
+
 }

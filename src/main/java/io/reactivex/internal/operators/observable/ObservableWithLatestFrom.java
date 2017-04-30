@@ -1,5 +1,5 @@
 /**
- * Copyright 2016 Netflix, Inc.
+ * Copyright (c) 2016-present, RxJava Contributors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
@@ -20,6 +20,7 @@ import io.reactivex.disposables.Disposable;
 import io.reactivex.exceptions.Exceptions;
 import io.reactivex.functions.BiFunction;
 import io.reactivex.internal.disposables.DisposableHelper;
+import io.reactivex.internal.functions.ObjectHelper;
 import io.reactivex.observers.SerializedObserver;
 
 public final class ObservableWithLatestFrom<T, U, R> extends AbstractObservableWithUpstream<T, R> {
@@ -37,29 +38,9 @@ public final class ObservableWithLatestFrom<T, U, R> extends AbstractObservableW
         final SerializedObserver<R> serial = new SerializedObserver<R>(t);
         final WithLatestFromObserver<T, U, R> wlf = new WithLatestFromObserver<T, U, R>(serial, combiner);
 
-        t.onSubscribe(wlf);
+        serial.onSubscribe(wlf);
 
-        other.subscribe(new Observer<U>() {
-            @Override
-            public void onSubscribe(Disposable s) {
-                wlf.setOther(s);
-            }
-
-            @Override
-            public void onNext(U t) {
-                wlf.lazySet(t);
-            }
-
-            @Override
-            public void onError(Throwable t) {
-                wlf.otherError(t);
-            }
-
-            @Override
-            public void onComplete() {
-                // nothing to do, the wlf will complete on its own pace
-            }
-        });
+        other.subscribe(new WithLastFrom(wlf));
 
         source.subscribe(wlf);
     }
@@ -91,7 +72,7 @@ public final class ObservableWithLatestFrom<T, U, R> extends AbstractObservableW
             if (u != null) {
                 R r;
                 try {
-                    r = combiner.apply(t, u);
+                    r = ObjectHelper.requireNonNull(combiner.apply(t, u), "The combiner returned a null value");
                 } catch (Throwable e) {
                     Exceptions.throwIfFatal(e);
                     dispose();
@@ -132,6 +113,34 @@ public final class ObservableWithLatestFrom<T, U, R> extends AbstractObservableW
         public void otherError(Throwable e) {
             DisposableHelper.dispose(s);
             actual.onError(e);
+        }
+    }
+
+    final class WithLastFrom implements Observer<U> {
+        private final WithLatestFromObserver<T, U, R> wlf;
+
+        WithLastFrom(WithLatestFromObserver<T, U, R> wlf) {
+            this.wlf = wlf;
+        }
+
+        @Override
+        public void onSubscribe(Disposable s) {
+            wlf.setOther(s);
+        }
+
+        @Override
+        public void onNext(U t) {
+            wlf.lazySet(t);
+        }
+
+        @Override
+        public void onError(Throwable t) {
+            wlf.otherError(t);
+        }
+
+        @Override
+        public void onComplete() {
+            // nothing to do, the wlf will complete on its own pace
         }
     }
 }

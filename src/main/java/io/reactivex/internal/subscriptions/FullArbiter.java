@@ -1,5 +1,5 @@
 /**
- * Copyright 2016 Netflix, Inc.
+ * Copyright (c) 2016-present, RxJava Contributors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
@@ -36,16 +36,7 @@ public final class FullArbiter<T> extends FullArbiterPad2 implements Subscriptio
     long requested;
 
     volatile Subscription s;
-    static final Subscription INITIAL = new Subscription() {
-        @Override
-        public void request(long n) {
-            // deliberately no op
-        }
-        @Override
-        public void cancel() {
-            // deliberately no op
-        }
-    };
+    static final Subscription INITIAL = new InitialSubscription();
 
 
     Disposable resource;
@@ -196,6 +187,18 @@ public final class FullArbiter<T> extends FullArbiterPad2 implements Subscriptio
             if (missed == 0) {
                 break;
             }
+        }
+    }
+
+    static final class InitialSubscription implements Subscription {
+        @Override
+        public void request(long n) {
+            // deliberately no op
+        }
+
+        @Override
+        public void cancel() {
+            // deliberately no op
         }
     }
 }

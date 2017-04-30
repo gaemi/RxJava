@@ -1,5 +1,5 @@
 /**
- * Copyright 2016 Netflix, Inc.
+ * Copyright (c) 2016-present, RxJava Contributors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
@@ -13,6 +13,7 @@
 package io.reactivex.flowables;
 
 import io.reactivex.Flowable;
+import io.reactivex.annotations.Nullable;
 
 /**
  * A {@link Flowable} that has been grouped by key, the value of which can be obtained with {@link #getKey()}.
@@ -37,7 +38,7 @@ public abstract class GroupedFlowable<K, T> extends Flowable<T> {
      * Constructs a GroupedFlowable with the given key.
      * @param key the key
      */
-    protected GroupedFlowable(K key) {
+    protected GroupedFlowable(@Nullable K key) {
         this.key = key;
     }
 
@@ -46,6 +47,7 @@ public abstract class GroupedFlowable<K, T> extends Flowable<T> {
      *
      * @return the key that the items emitted by this {@code GroupedObservable} were grouped by
      */
+    @Nullable
     public K getKey() {
         return key;
     }

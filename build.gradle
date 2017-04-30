@@ -47,6 +47,7 @@ javadoc {
     options.addStringOption('top').value = ''
     options.addStringOption('doctitle').value = ''
     options.addStringOption('header').value = ''
+    options.links("http://docs.oracle.com/javase/7/docs/api/")
     if (JavaVersion.current().isJava7()) {
         // "./gradle/stylesheet.css" only supports Java 7
         options.addStringOption('stylesheetfile', rootProject.file('./gradle/stylesheet.css').toString())
@@ -198,3 +199,26 @@ findbugsMain {
     }
 }
 */
+
+// from https://discuss.gradle.org/t/maven-publish-plugin-generated-pom-making-dependency-scope-runtime/7494/10
+
+publishing.publications.all {
+  pom.withXml {
+    asNode().dependencies.'*'.findAll() {
+      it.scope.text() == 'runtime' && project.configurations.compile.allDependencies.find { dep ->
+        dep.name == it.artifactId.text()
+      }
+    }.each { it.scope*.value = 'compile'}
+
+    asNode().developers.'*'.findAll() {
+       it.id.text() == 'benjchristensen'
+    } .each {
+       it.id*.value = 'akarnokd'
+       it.name*.value = 'David Karnok'
+       it.email*.value = 'akarnokd@gmail.com'
+    }
+    
+    asNode().properties.nebula_Module_Owner*.value = 'akarnokd@gmail.com'
+    asNode().properties.nebula_Module_Email*.value = 'akarnokd@gmail.com'
+  }
+}

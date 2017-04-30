@@ -1,5 +1,5 @@
 /**
- * Copyright 2016 Netflix, Inc.
+ * Copyright (c) 2016-present, RxJava Contributors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
@@ -13,6 +13,8 @@
 
 package io.reactivex;
 
+import io.reactivex.annotations.*;
+
 /**
  * Interface to map/wrap a downstream observer to an upstream observer.
  */
@@ -23,5 +25,6 @@ public interface CompletableOperator {
      * @return the parent CompletableObserver instance
      * @throws Exception on failure
      */
-    CompletableObserver apply(CompletableObserver observer) throws Exception;
+    @NonNull
+    CompletableObserver apply(@NonNull CompletableObserver observer) throws Exception;
 }

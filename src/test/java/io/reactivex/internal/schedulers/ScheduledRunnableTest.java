@@ -1,5 +1,5 @@
 /**
- * Copyright 2016 Netflix, Inc.
+ * Copyright (c) 2016-present, RxJava Contributors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
@@ -212,9 +212,75 @@ public class ScheduledRunnableTest {
 
             assertEquals(0, set.size());
 
-            TestHelper.assertError(errors, 0, TestException.class, "First");
+            TestHelper.assertUndeliverable(errors, 0, TestException.class, "First");
         } finally {
             RxJavaPlugins.reset();
+        }
+    }
+
+    @Test
+    public void withoutParentDisposed() {
+        ScheduledRunnable run = new ScheduledRunnable(Functions.EMPTY_RUNNABLE, null);
+        run.dispose();
+        run.call();
+    }
+
+    @Test
+    public void withParentDisposed() {
+        ScheduledRunnable run = new ScheduledRunnable(Functions.EMPTY_RUNNABLE, new CompositeDisposable());
+        run.dispose();
+        run.call();
+    }
+
+    @Test
+    public void withFutureDisposed() {
+        ScheduledRunnable run = new ScheduledRunnable(Functions.EMPTY_RUNNABLE, null);
+        run.setFuture(new FutureTask<Void>(Functions.EMPTY_RUNNABLE, null));
+        run.dispose();
+        run.call();
+    }
+
+    @Test
+    public void withFutureDisposed2() {
+        ScheduledRunnable run = new ScheduledRunnable(Functions.EMPTY_RUNNABLE, null);
+        run.dispose();
+        run.setFuture(new FutureTask<Void>(Functions.EMPTY_RUNNABLE, null));
+        run.call();
+    }
+
+    @Test
+    public void withFutureDisposed3() {
+        ScheduledRunnable run = new ScheduledRunnable(Functions.EMPTY_RUNNABLE, null);
+        run.dispose();
+        run.set(2, Thread.currentThread());
+        run.setFuture(new FutureTask<Void>(Functions.EMPTY_RUNNABLE, null));
+        run.call();
+    }
+
+    @Test
+    public void runFuture() {
+        for (int i = 0; i < 500; i++) {
+            CompositeDisposable set = new CompositeDisposable();
+            final ScheduledRunnable run = new ScheduledRunnable(Functions.EMPTY_RUNNABLE, set);
+            set.add(run);
+
+            final FutureTask<Void> ft = new FutureTask<Void>(Functions.EMPTY_RUNNABLE, null);
+
+            Runnable r1 = new Runnable() {
+                @Override
+                public void run() {
+                    run.call();
+                }
+            };
+
+            Runnable r2 = new Runnable() {
+                @Override
+                public void run() {
+                    run.setFuture(ft);
+                }
+            };
+
+            TestHelper.race(r1, r2);
         }
     }
 }

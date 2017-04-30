@@ -1,5 +1,5 @@
 /**
- * Copyright 2016 Netflix, Inc.
+ * Copyright (c) 2016-present, RxJava Contributors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
@@ -87,7 +87,7 @@ extends AbstractObservableWithUpstream<T, U> {
                 ObservableSource<B> boundary;
 
                 try {
-                    boundary = ObjectHelper.requireNonNull(boundarySupplier.call(), "The boundary publisher supplied is null");
+                    boundary = ObjectHelper.requireNonNull(boundarySupplier.call(), "The boundary ObservableSource supplied is null");
                 } catch (Throwable ex) {
                     Exceptions.throwIfFatal(ex);
                     cancelled = true;
@@ -179,7 +179,7 @@ extends AbstractObservableWithUpstream<T, U> {
             ObservableSource<B> boundary;
 
             try {
-                boundary = ObjectHelper.requireNonNull(boundarySupplier.call(), "The boundary publisher supplied is null");
+                boundary = ObjectHelper.requireNonNull(boundarySupplier.call(), "The boundary ObservableSource supplied is null");
             } catch (Throwable ex) {
                 Exceptions.throwIfFatal(ex);
                 cancelled = true;

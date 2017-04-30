@@ -1,5 +1,5 @@
 /**
- * Copyright 2016 Netflix, Inc.
+ * Copyright (c) 2016-present, RxJava Contributors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
@@ -61,7 +61,6 @@ public final class ObservableTakeLastTimed<T> extends AbstractObservableWithUpst
 
         volatile boolean cancelled;
 
-        volatile boolean done;
         Throwable error;
 
         TakeLastTimedObserver(Observer<? super T> actual, long count, long time, TimeUnit unit, Scheduler scheduler, int bufferSize, boolean delayError) {
@@ -107,13 +106,11 @@ public final class ObservableTakeLastTimed<T> extends AbstractObservableWithUpst
         @Override
         public void onError(Throwable t) {
             error = t;
-            done = true;
             drain();
         }
 
         @Override
         public void onComplete() {
-            done = true;
             drain();
         }
 

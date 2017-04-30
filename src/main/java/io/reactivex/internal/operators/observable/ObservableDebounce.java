@@ -1,5 +1,5 @@
 /**
- * Copyright 2016 Netflix, Inc.
+ * Copyright (c) 2016-present, RxJava Contributors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
@@ -81,7 +81,7 @@ public final class ObservableDebounce<T, U> extends AbstractObservableWithUpstre
             ObservableSource<U> p;
 
             try {
-                p = ObjectHelper.requireNonNull(debounceSelector.apply(t), "The publisher supplied is null");
+                p = ObjectHelper.requireNonNull(debounceSelector.apply(t), "The ObservableSource supplied is null");
             } catch (Throwable e) {
                 Exceptions.throwIfFatal(e);
                 dispose();

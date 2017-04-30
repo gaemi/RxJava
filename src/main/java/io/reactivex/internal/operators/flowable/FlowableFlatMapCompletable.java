@@ -1,5 +1,5 @@
 /**
- * Copyright 2016 Netflix, Inc.
+ * Copyright (c) 2016-present, RxJava Contributors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
@@ -18,6 +18,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.reactivestreams.*;
 
 import io.reactivex.*;
+import io.reactivex.annotations.Nullable;
 import io.reactivex.disposables.*;
 import io.reactivex.exceptions.Exceptions;
 import io.reactivex.functions.Function;
@@ -39,7 +40,7 @@ public final class FlowableFlatMapCompletable<T> extends AbstractFlowableWithUps
 
     final boolean delayErrors;
 
-    public FlowableFlatMapCompletable(Publisher<T> source,
+    public FlowableFlatMapCompletable(Flowable<T> source,
             Function<? super T, ? extends CompletableSource> mapper, boolean delayErrors,
             int maxConcurrency) {
         super(source);
@@ -54,7 +55,7 @@ public final class FlowableFlatMapCompletable<T> extends AbstractFlowableWithUps
     }
 
     static final class FlatMapCompletableMainSubscriber<T> extends BasicIntQueueSubscription<T>
-    implements Subscriber<T> {
+    implements FlowableSubscriber<T> {
         private static final long serialVersionUID = 8443155186132538303L;
 
         final Subscriber<? super T> actual;
@@ -116,9 +117,9 @@ public final class FlowableFlatMapCompletable<T> extends AbstractFlowableWithUps
 
             InnerConsumer inner = new InnerConsumer();
 
-            set.add(inner);
-
-            cs.subscribe(inner);
+            if (set.add(inner)) {
+                cs.subscribe(inner);
+            }
         }
 
         @Override
@@ -128,7 +129,6 @@ public final class FlowableFlatMapCompletable<T> extends AbstractFlowableWithUps
                     if (decrementAndGet() == 0) {
                         Throwable ex = errors.terminate();
                         actual.onError(ex);
-                        return;
                     } else {
                         if (maxConcurrency != Integer.MAX_VALUE) {
                             s.request(1);
@@ -139,7 +139,6 @@ public final class FlowableFlatMapCompletable<T> extends AbstractFlowableWithUps
                     if (getAndSet(0) > 0) {
                         Throwable ex = errors.terminate();
                         actual.onError(ex);
-                        return;
                     }
                 }
             } else {
@@ -174,6 +173,7 @@ public final class FlowableFlatMapCompletable<T> extends AbstractFlowableWithUps
             // ignored, no values emitted
         }
 
+        @Nullable
         @Override
         public T poll() throws Exception {
             return null; // always empty

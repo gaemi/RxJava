@@ -1,5 +1,5 @@
 /**
- * Copyright 2016 Netflix, Inc.
+ * Copyright (c) 2016-present, RxJava Contributors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
@@ -16,7 +16,7 @@ import java.util.concurrent.atomic.*;
 
 import org.reactivestreams.*;
 
-import io.reactivex.annotations.Experimental;
+import io.reactivex.FlowableSubscriber;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Consumer;
 import io.reactivex.internal.fuseable.QueueSubscription;
@@ -39,7 +39,7 @@ import io.reactivex.observers.BaseTestConsumer;
  */
 public class TestSubscriber<T>
 extends BaseTestConsumer<T, TestSubscriber<T>>
-implements Subscriber<T>, Subscription, Disposable {
+implements FlowableSubscriber<T>, Subscription, Disposable {
     /** The actual subscriber to forward events to. */
     private final Subscriber<? super T> actual;
 
@@ -117,6 +117,9 @@ implements Subscriber<T>, Subscription, Disposable {
      */
     public TestSubscriber(Subscriber<? super T> actual, long initialRequest) {
         super();
+        if (initialRequest < 0) {
+            throw new IllegalArgumentException("Negative initial request not allowed");
+        }
         this.actual = actual;
         this.subscription = new AtomicReference<Subscription>();
         this.missedRequested = new AtomicLong(initialRequest);
@@ -406,11 +409,11 @@ implements Subscriber<T>, Subscription, Disposable {
 
     /**
      * Calls {@link #request(long)} and returns this.
+     * <p>History: 2.0.1 - experimental
      * @param n the request amount
      * @return this
-     * @since 2.0.1 - experimental
+     * @since 2.1
      */
-    @Experimental
     public final TestSubscriber<T> requestMore(long n) {
         request(n);
         return this;
@@ -419,7 +422,7 @@ implements Subscriber<T>, Subscription, Disposable {
     /**
      * A subscriber that ignores all events and does not report errors.
      */
-    enum EmptySubscriber implements Subscriber<Object> {
+    enum EmptySubscriber implements FlowableSubscriber<Object> {
         INSTANCE;
 
         @Override

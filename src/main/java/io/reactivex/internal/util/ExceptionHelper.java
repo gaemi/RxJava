@@ -1,5 +1,5 @@
 /**
- * Copyright 2016 Netflix, Inc.
+ * Copyright (c) 2016-present, RxJava Contributors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
@@ -49,15 +49,7 @@ public final class ExceptionHelper {
      * A singleton instance of a Throwable indicating a terminal state for exceptions,
      * don't leak this.
      */
-    public static final Throwable TERMINATED = new Throwable("No further exceptions") {
-
-        private static final long serialVersionUID = -4649703670690200604L;
-
-        @Override
-        public Throwable fillInStackTrace() {
-            return this;
-        }
-    };
+    public static final Throwable TERMINATED = new Termination();
 
     public static <T> boolean addThrowable(AtomicReference<Throwable> field, Throwable exception) {
         for (;;) {
@@ -112,5 +104,19 @@ public final class ExceptionHelper {
         }
 
         return list;
+    }
+
+    static final class Termination extends Throwable {
+
+        private static final long serialVersionUID = -4649703670690200604L;
+
+        Termination() {
+            super("No further exceptions");
+        }
+
+        @Override
+        public Throwable fillInStackTrace() {
+            return this;
+        }
     }
 }

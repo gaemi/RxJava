@@ -1,5 +1,5 @@
 /**
- * Copyright 2016 Netflix, Inc.
+ * Copyright (c) 2016-present, RxJava Contributors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
@@ -16,6 +16,7 @@ package io.reactivex.internal.operators.maybe;
 import java.util.Iterator;
 
 import io.reactivex.*;
+import io.reactivex.annotations.Nullable;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.exceptions.Exceptions;
 import io.reactivex.functions.Function;
@@ -81,12 +82,12 @@ public final class MaybeFlatMapIterableObservable<T, R> extends Observable<R> {
         public void onSuccess(T value) {
             Observer<? super R> a = actual;
 
-            Iterator<? extends R> iter;
+            Iterator<? extends R> iterator;
             boolean has;
             try {
-                iter = mapper.apply(value).iterator();
+                iterator = mapper.apply(value).iterator();
 
-                has = iter.hasNext();
+                has = iterator.hasNext();
             } catch (Throwable ex) {
                 Exceptions.throwIfFatal(ex);
                 a.onError(ex);
@@ -98,9 +99,9 @@ public final class MaybeFlatMapIterableObservable<T, R> extends Observable<R> {
                 return;
             }
 
-            this.it = iter;
+            this.it = iterator;
 
-            if (outputFused && iter != null) {
+            if (outputFused) {
                 a.onNext(null);
                 a.onComplete();
                 return;
@@ -114,7 +115,7 @@ public final class MaybeFlatMapIterableObservable<T, R> extends Observable<R> {
                 R v;
 
                 try {
-                    v = iter.next();
+                    v = iterator.next();
                 } catch (Throwable ex) {
                     Exceptions.throwIfFatal(ex);
                     a.onError(ex);
@@ -131,7 +132,7 @@ public final class MaybeFlatMapIterableObservable<T, R> extends Observable<R> {
                 boolean b;
 
                 try {
-                    b = iter.hasNext();
+                    b = iterator.hasNext();
                 } catch (Throwable ex) {
                     Exceptions.throwIfFatal(ex);
                     a.onError(ex);
@@ -187,13 +188,14 @@ public final class MaybeFlatMapIterableObservable<T, R> extends Observable<R> {
             return it == null;
         }
 
+        @Nullable
         @Override
         public R poll() throws Exception {
-            Iterator<? extends R> iter = it;
+            Iterator<? extends R> iterator = it;
 
-            if (iter != null) {
-                R v = ObjectHelper.requireNonNull(iter.next(), "The iterator returned a null value");
-                if (!iter.hasNext()) {
+            if (iterator != null) {
+                R v = ObjectHelper.requireNonNull(iterator.next(), "The iterator returned a null value");
+                if (!iterator.hasNext()) {
                     it = null;
                 }
                 return v;

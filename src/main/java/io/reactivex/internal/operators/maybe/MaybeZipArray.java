@@ -1,5 +1,5 @@
 /**
- * Copyright 2016 Netflix, Inc.
+ * Copyright (c) 2016-present, RxJava Contributors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
@@ -41,12 +41,7 @@ public final class MaybeZipArray<T, R> extends Maybe<R> {
 
 
         if (n == 1) {
-            sources[0].subscribe(new MaybeMap.MapMaybeObserver<T, R>(observer, new Function<T, R>() {
-                @Override
-                public R apply(T t) throws Exception {
-                    return zipper.apply(new Object[] { t });
-                }
-            }));
+            sources[0].subscribe(new MaybeMap.MapMaybeObserver<T, R>(observer, new SingletonArrayFunc()));
             return;
         }
 
@@ -59,7 +54,13 @@ public final class MaybeZipArray<T, R> extends Maybe<R> {
                 return;
             }
 
-            sources[i].subscribe(parent.observers[i]);
+            MaybeSource<? extends T> source = sources[i];
+
+            if (source == null) {
+                parent.innerError(new NullPointerException("One of the sources is null"), i);
+                return;
+            }
+            source.subscribe(parent.observers[i]);
         }
     }
 
@@ -185,6 +186,13 @@ public final class MaybeZipArray<T, R> extends Maybe<R> {
         @Override
         public void onComplete() {
             parent.innerComplete(index);
+        }
+    }
+
+    final class SingletonArrayFunc implements Function<T, R> {
+        @Override
+        public R apply(T t) throws Exception {
+            return zipper.apply(new Object[] { t });
         }
     }
 }

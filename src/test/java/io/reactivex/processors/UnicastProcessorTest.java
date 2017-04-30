@@ -1,5 +1,5 @@
 /**
- * Copyright 2016 Netflix, Inc.
+ * Copyright (c) 2016-present, RxJava Contributors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
@@ -74,6 +74,54 @@ public class UnicastProcessorTest extends DelayedFlowableProcessorTest<Object> {
         .assertOf(SubscriberFusion.<Integer>assertFuseable())
         .assertOf(SubscriberFusion.<Integer>assertFusionMode(QueueSubscription.ASYNC))
         .assertResult(1);
+    }
+
+    @Test
+    public void failFast() {
+        UnicastProcessor<Integer> ap = UnicastProcessor.create(false);
+        ap.onNext(1);
+        ap.onError(new RuntimeException());
+
+        TestSubscriber<Integer> ts = TestSubscriber.create();
+
+        ap.subscribe(ts);
+
+        ts
+                .assertValueCount(0)
+                .assertError(RuntimeException.class);
+    }
+
+    @Test
+    public void failFastFusionOffline() {
+        UnicastProcessor<Integer> ap = UnicastProcessor.create(false);
+        ap.onNext(1);
+        ap.onError(new RuntimeException());
+
+        TestSubscriber<Integer> ts = SubscriberFusion.newTest(QueueSubscription.ANY);
+
+        ap.subscribe(ts);
+        ts
+                .assertValueCount(0)
+                .assertError(RuntimeException.class);
+    }
+
+    @Test
+    public void threeArgsFactory() {
+        Runnable noop = new Runnable() {
+            @Override
+            public void run() {
+            }
+        };
+        UnicastProcessor<Integer> ap = UnicastProcessor.create(16, noop,false);
+        ap.onNext(1);
+        ap.onError(new RuntimeException());
+
+        TestSubscriber<Integer> ts = TestSubscriber.create();
+
+        ap.subscribe(ts);
+        ts
+                .assertValueCount(0)
+                .assertError(RuntimeException.class);
     }
 
     @Test
@@ -184,7 +232,7 @@ public class UnicastProcessorTest extends DelayedFlowableProcessorTest<Object> {
         try {
             p.onError(new TestException());
 
-            TestHelper.assertError(errors, 0, TestException.class);
+            TestHelper.assertUndeliverable(errors, 0, TestException.class);
         } finally {
             RxJavaPlugins.reset();
         }
